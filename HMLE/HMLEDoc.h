@@ -30,6 +30,7 @@ struct tagHMLEDoc {
     BOOL        wordWrap;
     BOOL        wordWrapSizeAuto;
     int         wordWrapSize;
+    BOOL        wordProtect;
     int         errno;
 };
 

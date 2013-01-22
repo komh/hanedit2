@@ -143,7 +143,18 @@ USHORT ncx,ncy;
     hmle->ySize = (ncy+15)/16;
 
     if( hmle->doc->wordWrapSizeAuto )
-       hmle->doc->wordWrapSize = hmle->xSize - 2;
+    {
+        BOOL    wordWrap;
+        BOOL    wordProtect;
+        MPARAM  rc;
+
+        rc = ( MPARAM )WinSendMsg( hmle->hwndHMLE, HMLM_QUERYWRAP, 0, 0 );
+        wordWrap = ( BOOL )CHAR3FROMMP( rc );
+        wordProtect = ( BOOL )CHAR4FROMMP( rc );
+
+        WinPostMsg( hmle->hwndHMLE, HMLM_SETWRAP,
+                    MPFROM2SHORT( wordWrap, wordProtect ), 0 );
+    }
 
     WinPostMsg(hmle->hwndHMLE,HMLM_REFRESH,0L,0L);
 

@@ -26,6 +26,7 @@ HMLELine* line;
     doc->wordWrap = FALSE;
     doc->wordWrapSizeAuto = FALSE;
     doc->wordWrapSize = 0;
+    doc->wordProtect = FALSE;
 
     HMLEDocSetSeparators(doc,HMLEDOC_DEFAULTSEPARATORS);
 
@@ -133,19 +134,7 @@ char *pch = NULL;
             }
 
         if( this->wordWrap )
-            {
-                int lines, stx;
-
-                stx = this->curStx;
-                lines = HMLELineQueryWordWrapInfo( this->curLine, this->wordWrapSize, this->tabsize, &stx );
-                HMLEDocWordWrap( this, this->curLine );
-                while( lines > 1 )
-                {
-                    HMLEDocMoveCurLineNext(this);
-                    lines--;
-                }
-                this->curStx = stx;
-            }
+            HMLEDocWordWrap( this, this->curLine );
         }
     this->savedCol = HMLEDocStx2Col( this, this->curLine, this->curStx );
 
@@ -258,6 +247,9 @@ int selectionSize = 0;
         } else return -1;
 
     HMLEDocSetCurIpt(this,beginIpt);
+
+    if( this->wordWrap )
+        HMLEDocWordWrap( this, this->curLine );
 
     this->changed=TRUE;
     return selectionSize;
@@ -509,8 +501,7 @@ int HMLEDocMoveCurStx(HMLEDoc *this,int step)
         {
         step--;
         if ((this->curStx < HMLELineQueryLen(this->curLine)) &&
-            !( this->wordWrap && this->curLine->wordWrapped  &&
-               ( HMLEDocStx2Col( this, this->curLine, this->curStx ) == ( this->wordWrapSize - 1 ))))
+            !( this->wordWrap && this->curLine->wordWrapped  && (( this->curStx + 1 ) == HMLELineQueryLen( this->curLine ))))
         {
             this->curStx ++;
         }
@@ -568,8 +559,7 @@ int tempStx;
         step--;
         tempStx = this->curStx;
         if( hch_incStx(HMLELineQueryStr(this->curLine,0),&tempStx) &&
-           !( this->wordWrap && this->curLine->wordWrapped &&
-              ( HMLEDocStx2Col( this, this->curLine, this->curStx ) == ( this->wordWrapSize - 1 ))))
+           !( this->wordWrap && this->curLine->wordWrapped && ( this->curStx + 1 == HMLELineQueryLen( this->curLine ))))
             {
                 this->curStx = tempStx;
             } else {
@@ -624,16 +614,21 @@ HMLELine* newLine;
     if (this->curLine==NULL) return NULL;
 
     newLine = HMLELineSplit(this->curLine,this->curStx);
-    if( this->wordWrap )
-        HMLEDocWordWrap( this, newLine );
-
     if (this->endLine == this->curLine) this->endLine = newLine;
+
+    if( this->wordWrap )
+        HMLEDocWordWrap( this, this->curLine );
+
     HMLEDocMoveCurLineNext(this);
     if (this->curLine->nextLine==NULL) this->endLine = this->curLine;
+
+    if( this->wordWrap)
+        HMLEDocWordWrap( this, this->curLine );
+
 //  HMLEDocMoveCurLineTo(this,HMLELineQueryLineNumber(this->curLine)+1);
     HMLEDocMoveCurStxTo(this,0);
     this->changed = TRUE;
-    return newLine;
+    return this->curLine;
 }
 
 int HMLEDocCombineLines(HMLEDoc *this)
@@ -798,7 +793,7 @@ int inc;
         return 0;
         }
 
-    if (HMLELineIsPacked(this->curLine))
+    //if (HMLELineIsPacked(this->curLine))
         HMLEDocUnpackCurLine(this);
 
     inc=HMLELineInsertHch(this->curLine,this->curStx,hch);
@@ -807,16 +802,7 @@ int inc;
         this->changed = TRUE;
 
         if( this->wordWrap )
-        {
-            int curCol = HMLEDocStx2Col( this, this->curLine, this->curStx );
-
-            curCol += ( hch == '\t' ) ? HMLEDocQueryTabspaceCol( this, curCol ) : inc;
-
-            if( curCol > this->wordWrapSize )
-                inc ++;
-
             HMLEDocWordWrap( this, this->curLine );
-        }
     }
 
 #ifdef DEBUG
@@ -900,10 +886,6 @@ HMLEIpt curIpt;
 HMLEIpt *beginIpt;
 HMLEIpt *endIpt;
 
-HMLELine *line;
-HMLELine *beginLine;
-HMLELine *endLine;
-
 int selectionSize = 0;
 
     if (this==NULL) return -1;
@@ -914,42 +896,10 @@ int selectionSize = 0;
     beginIpt = HMLEIptBefore(&anchorIpt,&curIpt);
     endIpt = HMLEIptAfter(&anchorIpt,&curIpt);
 
-    beginLine = HMLEDocQueryLine(this,beginIpt->ln);
-    endLine = HMLEDocQueryLine(this,endIpt->ln);
-    if ((beginLine==NULL)||(endLine==NULL)) return -1;
+    selectionSize = HMLEDocDelete( this, beginIpt, endIpt );
 
-    selectionSize = HMLEDocQuerySize(this,&anchorIpt,&curIpt);
-
-    line = beginLine;
-    while (line!=endLine)
-        {
-        if (line==beginLine)
-            {
-            HMLELineDeleteFrom(line,beginIpt->stx); // in-bound
-            line=line->nextLine;
-            } else {
-            line=line->nextLine;
-            HMLEDestroyLine(line->prevLine);
-            }
-        }
-    if (line==endLine)
-        {
-        if (line==beginLine)
-            {
-            HMLELineDeleteFromTo(line,beginIpt->stx,endIpt->stx);
-            } else {
-            HMLELineDeleteTo(line,endIpt->stx); // ex-bound
-
-            HMLEDocEndSelection(this);
-            HMLEDocSetCurIpt(this,beginIpt);
-            if (HMLEDocCombineLines(this)!=0) return -1;
-            }
-        } else return -1;
-
-    HMLEDocSetCurIpt(this,beginIpt);
     HMLEDocEndSelection(this);
 
-    this->changed=TRUE;
     return selectionSize;
 }
 
@@ -1342,6 +1292,9 @@ int HMLEDocWordWrap( HMLEDoc *this, HMLELine *line )
 {
     int wordWrapSize;
     HMLELine *nextLine;
+    HMLELine *lastLine = NULL;
+    int stx, anchorStx;
+    BOOL found, foundAnchor;
 
     if( this == NULL )
         return -1;
@@ -1349,19 +1302,128 @@ int HMLEDocWordWrap( HMLEDoc *this, HMLELine *line )
     wordWrapSize = this->wordWrap ? this->wordWrapSize : 0;
 
     if( line != NULL )
-        return HMLELineWordWrap( line, wordWrapSize, this->tabsize );
-
-    for( line = this->beginLine; line != NULL; line = nextLine )
     {
+        for( lastLine = line; lastLine && lastLine->wordWrapped; lastLine = lastLine->nextLine );
+        if( lastLine )
+            lastLine = lastLine->nextLine;
+
+        while( line->prevLine && line->prevLine->wordWrapped )
+            line = line->prevLine;
+    }
+    else
+        line = this->beginLine;
+
+    found = foundAnchor = FALSE;
+    for( ; line != lastLine; line = nextLine )
+    {
+        stx = anchorStx = 0;
         nextLine = line;
         while(( nextLine != NULL ) && ( nextLine->wordWrapped ))
-            nextLine = nextLine->nextLine;
-        if(( nextLine != NULL ) && ( !nextLine->wordWrapped ))
-            nextLine = nextLine->nextLine;
+        {
+            if( nextLine == this->curLine )
+            {
+                found = TRUE;
+                stx += this->curStx;
+            }
+            else if( !found )
+                stx += HMLELineQueryLen( nextLine );
 
-        HMLELineWordWrap( line, wordWrapSize, this->tabsize );
+            if( nextLine == this->anchorLine )
+            {
+                foundAnchor = TRUE;
+                anchorStx += this->anchorStx;
+            }
+            else if( !foundAnchor )
+                anchorStx += HMLELineQueryLen( nextLine );
+
+            nextLine = nextLine->nextLine;
+        }
+
+        if(( nextLine != NULL ) && ( !nextLine->wordWrapped ))
+        {
+            if( nextLine == this->curLine )
+            {
+                found = TRUE;
+                stx += this->curStx;
+            }
+
+            if( nextLine == this->anchorLine )
+            {
+                foundAnchor = TRUE;
+                anchorStx += this->anchorStx;
+            }
+
+            nextLine = nextLine->nextLine;
+        }
+
+        HMLELineWordWrap( line, wordWrapSize, this->wordProtect, this->tabsize );
+
+        if( found )
+        {
+            HMLELine *curLine;
+            int len;
+
+            for( curLine = line; ( curLine != NULL ) && curLine->wordWrapped; curLine = curLine->nextLine )
+            {
+                len = HMLELineQueryLen( curLine );
+                if( stx < len )
+                {
+                    this->curLine = curLine;
+                    this->curStx = stx;
+                    curLine = NULL;
+                    break;
+                }
+                else
+                    stx -= len;
+            }
+
+            if( curLine )
+            {
+                this->curLine = curLine;
+                this->curStx = stx;
+            }
+
+            found = FALSE;
+        }
+
+        if( foundAnchor )
+        {
+            HMLELine *anchorLine;
+            int len;
+
+            for( anchorLine = line; ( anchorLine != NULL ) && anchorLine->wordWrapped; anchorLine = anchorLine->nextLine )
+            {
+                len = HMLELineQueryLen( anchorLine );
+                if( anchorStx < len )
+                {
+                    this->anchorLine = anchorLine;
+                    this->anchorStx = anchorStx;
+                    anchorLine = NULL;
+                    break;
+                }
+                else
+                    anchorStx -= len;
+            }
+
+            if( anchorLine )
+            {
+                this->anchorLine = anchorLine;
+                this->anchorStx = anchorStx;
+            }
+
+            foundAnchor = FALSE;
+        }
+
+        if( nextLine == NULL )
+        {
+            while( line->nextLine )
+                line = line->nextLine;
+
+            this->endLine = line;
+        }
     }
 
     return 0;
 }
+
 

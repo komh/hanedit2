@@ -284,7 +284,7 @@ char *newstr;
     return 0;
 }
 
-int HMLELineWordWrap( HMLELine *this, int size, int tabSize )
+int HMLELineWordWrap( HMLELine *this, int size, BOOL wordProtect, int tabSize )
 {
     int alignStx;
     HMLELine *newLine;
@@ -300,6 +300,38 @@ int HMLELineWordWrap( HMLELine *this, int size, int tabSize )
     while( queryLenWithTabSize( this, tabSize ) > size )
     {
         alignStx = col2stx( this, size, tabSize );
+
+        if( wordProtect )
+        {
+            char *str = HMLELineQueryStr( this, 0 );
+            char *p;
+
+#ifdef DEBUG
+            printf("size %d, alignStx %d, str %p, len %d\n", size, alignStx, str + alignStx, HMLELineQueryLen( this ));
+#endif
+            for( p = str + alignStx - 1; p > str; p-- )
+            {
+                if(( *p == ' ' ) || ( *p == '\t' ))
+                    break;
+            }
+
+            if(( *p != ' ' ) && ( *p != '\t' ))
+            {
+                for( p = str + alignStx; *p; p++ )
+                    if(( *p == ' ' ) || ( *p == '\t' ))
+                        break;
+            }
+            else
+                p++;
+
+            alignStx += p - ( str + alignStx );
+#ifdef DEBUG
+            printf("alignStx %d, p %p\n", alignStx, p );
+#endif
+            if( str[ alignStx ] == 0 )
+                break;
+        }
+
         hch_alignStx( HMLELineQueryStr( this, 0 ), &alignStx );
         newLine = HMLELineSplit( this, alignStx );
         this->wordWrapped = TRUE;
@@ -310,11 +342,11 @@ int HMLELineWordWrap( HMLELine *this, int size, int tabSize )
     return 0;
 }
 
-int HMLELineQueryWordWrapInfo( HMLELine *this, int size, int tabSize, int *stx )
+int HMLELineQueryWordWrapInfo( HMLELine *this, int size, BOOL wordProtect, int tabSize, int *stx )
 {
     int len = 0;
     int lines = 1;
-    int idx, cntStx;
+    int idx, cntStx, oldIdx;
     char *str;
     HMLELine *line;
 
@@ -334,7 +366,51 @@ int HMLELineQueryWordWrapInfo( HMLELine *this, int size, int tabSize, int *stx )
 
         if( len > size )
         {
+            if( wordProtect )
+            {
+                char *p;
+
+#ifdef DEBUG
+                printf("stx %d, cntStx %d, idx %d, str %p, len %d\n", *stx, cntStx, idx, str, strlen( str ));
+#endif
+
+                for( p = str + idx - 1; p > str; p-- )
+                {
+                    if(( *p == ' ' ) || ( *p == '\t' ))
+                        break;
+                }
+
+                if(( *p != ' ' ) && ( *p != '\t' ))
+                {
+                    for( p = str + idx; *p; p++ )
+                    {
+                        if(( *p == ' ' ) || ( *p == '\t' ))
+                            break;
+                    }
+                }
+                else
+                    p++;
+
+                cntStx += p - ( str + idx );
+                idx += p - ( str + idx );
+
+#ifdef DEBUG
+                printf("cntStx %d, idx %d, str %p, len %d\n", cntStx, idx, str, strlen( str ));
+#endif
+
+                if( !str[ idx ] )
+                {
+                    *stx = idx;
+                    break;
+                }
+            }
+
             if( cntStx <= *stx ) lines ++;
+
+            oldIdx = idx;
+            hch_alignStx( str, &idx );
+            cntStx -= oldIdx - idx;
+
             str += idx;
             idx = 0;
             len = ( str[ idx ] == '\t' ) ? tabSize : 1;
@@ -345,8 +421,12 @@ int HMLELineQueryWordWrapInfo( HMLELine *this, int size, int tabSize, int *stx )
         }
 
         if( cntStx == *stx )
-            *stx = idx;
+           *stx = idx;
     }
+
+    if( cntStx == *stx )    // for insertion of non-LF terminated string
+        *stx = idx;
+
     HMLEDestroyLine( line );
 
     return lines;

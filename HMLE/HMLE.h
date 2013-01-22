@@ -133,6 +133,7 @@ typedef struct tagHMLECTLDATA {
     BOOL    autoIndent;
     ULONG   maxLineSize;
     int     wordWrapSize;
+    BOOL    wordProtect;
     HWND    hwndHIA;
 } HMLECTLDATA, *PHMLECTLDATA;
 

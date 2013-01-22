@@ -125,6 +125,7 @@ static BOOL autoIndent = DEFAULT_AUTOINDENT;
 static BOOL markingState = FALSE;
 static BOOL wordWrap = DEFAULT_WORDWRAP;
 static int  wordWrapSize = DEFAULT_WORDWRAPSIZE;
+static BOOL wordProtect = FALSE;
 
 static char szFullPath[CCHMAXPATH];
 static char szDir[CCHMAXPATH];
@@ -280,6 +281,8 @@ char hanjafontpath[256];
             wordWrap = TRUE;
             wordWrapSize = atoi( argv[ ++idx ]);
         }
+        else if( strcmp( str, "-wordprotect") == 0 )
+            wordProtect = TRUE;
         else {
         bootopen = argv[idx];
         }
@@ -509,6 +512,7 @@ LONG color;
     hmlecd.autoIndent = autoIndent;
     hmlecd.maxLineSize = maxLineSize;
     hmlecd.wordWrapSize = wordWrapSize;
+    hmlecd.wordProtect = wordProtect;
     hmlecd.hwndHIA = hwndHIA;
 //  printf("cx = %d\ncy = %d\n",pcreate->cx,pcreate->cy);
 //  printf("maxLineSize = %d\n",maxLineSize);
@@ -1180,8 +1184,9 @@ ULONG HanType   = (ULONG)  WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
 ULONG ulrc = ( ULONG ) WinSendMsg( hwndHMLE, HMLM_QUERYWRAP, 0, 0 );
 //int old_eoltype = TextFormat;
 //int old_hantype = HanType;
-BOOL wordWrap = SHORT1FROMMR( ulrc );
-int  wordWrapSize = SHORT2FROMMR( ulrc );
+BOOL wordWrap = CHAR3FROMMP( ulrc );
+BOOL wordProtect = CHAR4FROMMP( ulrc );
+int  wordWrapSize = SHORT1FROMMR( ulrc );
 CHAR size[ 10 ];
 
     hwndDlg = WinLoadDlg(HWND_DESKTOP,hwnd,&WinDefDlgProc,NULLHANDLE,IDD_OPTIONS,NULL);
@@ -1232,7 +1237,7 @@ CHAR size[ 10 ];
         if(( wordWrapSize != 0 ) && ( wordWrapSize < MIN_WORDWRAP_SIZE ))
             wordWrapSize = MIN_WORDWRAP_SIZE;
 
-        WinSendMsg( hwndHMLE, HMLM_SETWRAP, MPFROMLONG( wordWrap ), MPFROMSHORT( wordWrapSize ));
+        WinSendMsg( hwndHMLE, HMLM_SETWRAP, MPFROM2SHORT( wordWrap, wordProtect ), MPFROMSHORT( wordWrapSize ));
         }
     WinDestroyWindow(hwndDlg);
     return 0L;

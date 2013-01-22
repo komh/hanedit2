@@ -185,6 +185,7 @@ HMLE* hmle = NULL;
         pCtlData->autoIndent = pHMLECD->autoIndent;
         pCtlData->maxLineSize = pHMLECD->maxLineSize;
         pCtlData->wordWrapSize = pHMLECD->wordWrapSize;
+        pCtlData->wordProtect = pHMLECD->wordProtect;
         if (WinIsWindow(WinQueryAnchorBlock(hwnd),pHMLECD->hwndHIA))
             pCtlData->hwndHIA = pHMLECD->hwndHIA;
             else
@@ -196,6 +197,7 @@ HMLE* hmle = NULL;
         pCtlData->autoIndent = TRUE;
         pCtlData->maxLineSize = HMLE_DEFAULT_MAXLINESIZE;
         pCtlData->wordWrapSize = 0;
+        pCtlData->wordProtect = FALSE;
         pCtlData->hwndHIA   = NULLHANDLE;
         }
 
@@ -261,6 +263,7 @@ HMLE* hmle = NULL;
     hmle->doc->wordWrap = pCreate->flStyle & HMLS_WORDWRAP;
     hmle->doc->wordWrapSizeAuto = pCtlData->wordWrapSize == 0;
     hmle->doc->wordWrapSize = pCtlData->wordWrapSize;
+    hmle->doc->wordProtect = pCtlData->wordProtect;
 
     WinSetWindowPtr(hwnd,WINWORD_INSTANCE,hmle);
 
@@ -603,6 +606,7 @@ HMLEDoc *newdoc;
     newdoc->wordWrap = hmle->doc->wordWrap;
     newdoc->wordWrapSizeAuto = hmle->doc->wordWrapSizeAuto;
     newdoc->wordWrapSize = hmle->doc->wordWrapSize;
+    newdoc->wordProtect = hmle->doc->wordProtect;
 
     HMLEDestroyDoc(hmle->doc);
 
@@ -1382,12 +1386,14 @@ HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 static MRESULT hmle_usermSetWrap( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 {
     HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
-    BOOL wordWrap = ( BOOL )mp1;
+    BOOL wordWrap = ( BOOL )SHORT1FROMMP( mp1 );
+    BOOL wordProtect = ( BOOL )SHORT2FROMMP( mp1 );
     int  wordWrapSize = ( BOOL )mp2;
 
     hmle->doc->wordWrap = wordWrap;
     hmle->doc->wordWrapSizeAuto = FALSE;
     hmle->doc->wordWrapSize = wordWrapSize;
+    hmle->doc->wordProtect = wordProtect;
     if( wordWrapSize == 0 )
     {
         hmle->doc->wordWrapSizeAuto = TRUE;
@@ -1405,11 +1411,12 @@ static MRESULT hmle_usermQueryWrap( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
     BOOL wordWrap = hmle->doc->wordWrap;
     int  wordWrapSize = hmle->doc->wordWrapSize;
+    BOOL wordProtect = hmle->doc->wordProtect;
 
     if( hmle->doc->wordWrapSizeAuto )
         wordWrapSize = 0;
 
-    return MRFROM2SHORT( wordWrap, wordWrapSize );
+    return ( MRESULT )MPFROMSH2CH( wordWrapSize, wordWrap, wordProtect );
 }
 
 /*
