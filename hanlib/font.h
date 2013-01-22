@@ -3135,4 +3135,3 @@ BYTE DefaultSpecFont[36096] =
 };
 
 #endif // _DEFAULT_FONT_H_
-
