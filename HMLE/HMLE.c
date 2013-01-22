@@ -599,6 +599,7 @@ HMLEDoc *newdoc;
 
     if (newdoc==NULL) return MRFROMLONG(-1);
 
+    newdoc->tabsize = hmle->doc->tabsize;
     newdoc->wordWrap = hmle->doc->wordWrap;
     newdoc->wordWrapSizeAuto = hmle->doc->wordWrapSizeAuto;
     newdoc->wordWrapSize = hmle->doc->wordWrapSize;
