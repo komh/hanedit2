@@ -3,6 +3,7 @@ hanLib/hanControls/hanEdit 소스 배포본
 
 0.소개
 
+
 hanLib는 영문 PM상에서 고정폭 한글을 구현하기 위한 라이브러리입니다.
 hanControls는 hanLib를 사용하여 각종 한글 컨트롤들을 구현한
 라이브러리입니다.마지막으로 hanEdit/2는 이들을 사용한

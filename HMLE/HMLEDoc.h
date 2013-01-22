@@ -93,6 +93,6 @@ int HMLEDocFindString(HMLEDoc *this,const char* findStr,
 void HMLEDocCheckPacking(HMLEDoc *this);
 int HMLEDocReport(HMLEDoc* this,FILE *stream);
 void HMLEDocDump(HMLEDoc *this,FILE *stream,int options);
-
+int HMLEDocColFromStx(HMLEDoc *this, int stx);
 
 #endif // __HMLEDOC_H__

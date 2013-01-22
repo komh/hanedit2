@@ -30,6 +30,13 @@ ETC_H = \
 ETC_O = $(ETC_H:.h=.o)
 ETC_OBJ = $(ETC_H:.h=.obj)
 
+HCT_DIR = ../hct
+HCT_H = \
+	$(HCT_DIR)/hct.h\
+	$(HCT_DIR)/ktype.h
+HCT_O = $(HCT_DIR)/hct.o
+HCT_OBJ = $(HCT_DIR)/hct.obj
+
 HMLE_DIR = ../HMLE
 HMLE_LIB = ../HMLE/HMLE.lib
 HMLE_A = ../HMLE/HMLE.a
@@ -50,12 +57,12 @@ debug:	HMLEdit.exe
 release: hanedit.exe
 all:	HMLEdit.exe hanedit.exe
 
-LIBS_H = $(HMLE_H) $(HST_H) $(HEF_H) $(HAN_H) $(ETC_H)
+LIBS_H = $(HMLE_H) $(HST_H) $(HEF_H) $(HAN_H) $(ETC_H) $(HCT_H)
 
 #hanedit Develop version
 HMLEDIT_O = HMLEdit.o statbar.o toolbar.o dlg.o
-HMLEdit.exe:	$(HMLEDIT_O) $(HMLE_A) $(HST_A) $(HEF_A) $(HAN_A) $(ETC_O) HMLEdit.def HMLEdit.res
-	$(CC) $(CFLAGS) -o HMLEdit.exe $(HMLEDIT_O) $(HMLE_A) $(HST_A) $(HEF_A) $(HAN_A) $(ETC_O) HMLEdit.def HMLEdit.res -Zstack 0x2000
+HMLEdit.exe:	$(HMLEDIT_O) $(HMLE_A) $(HST_A) $(HEF_A) $(HAN_A) $(ETC_O) $(HCT_O) HMLEdit.def HMLEdit.res
+	$(CC) $(CFLAGS) -o HMLEdit.exe $(HMLEDIT_O) $(HMLE_A) $(HST_A) $(HEF_A) $(HAN_A) $(ETC_O) $(HCT_O) HMLEdit.def HMLEdit.res -Zstack 0x2000
 
 HMLEdit.o:	HMLEdit.h res.h $(LIBS_H)
 statbar.o:	statbar.h $(LIBS_H)
@@ -66,8 +73,8 @@ HMLEdit.res:	HMLEdit.rc res.h dlg.dlg $(HMLE_H) $(HST_H) $(HEF_H)
 
 #hanedit Release version
 HMLEDIT_OBJ = $(HMLEDIT_O:.o=.obj)
-hanedit.exe:	$(HMLEDIT_OBJ) $(HMLE_LIB) $(HST_LIB) $(HEF_LIB) $(HAN_LIB) $(ETC_OBJ) HMLEdit.def HMLEdit.res
-	$(CC) $(CFLAGS2) -o hanedit.exe $(HMLEDIT_OBJ) $(HMLE_LIB) $(HST_LIB) $(HEF_LIB) $(HAN_LIB) $(ETC_OBJ) hanedit.def HMLEdit.res -Zstack 0x2000
+hanedit.exe:	$(HMLEDIT_OBJ) $(HMLE_LIB) $(HST_LIB) $(HEF_LIB) $(HAN_LIB) $(ETC_OBJ) $(HCT_OBJ) HMLEdit.def HMLEdit.res
+	$(CC) $(CFLAGS2) -o hanedit.exe $(HMLEDIT_OBJ) $(HMLE_LIB) $(HST_LIB) $(HEF_LIB) $(HAN_LIB) $(ETC_OBJ) $(HCT_OBJ) hanedit.def HMLEdit.res -Zstack 0x2000
 
 HMLEdit.obj:	HMLEdit.h $(LIBS_H)
 statbar.obj:	statbar.h $(LIBS_H)
@@ -79,4 +86,3 @@ touch:
 
 clean:
 	-$(RM) *.o *.obj *.bak core *~
-

@@ -1,71 +1,73 @@
 #ifndef OS2_INCLUDED
    #include <os2.h>
 #endif
-DLGINCLUDE 1 "E:\Develop\hanedit\res.h"
+DLGINCLUDE 1 "res.h"
 
-DLGTEMPLATE IDD_ABOUT LOADONCALL MOVEABLE DISCARDABLE
+DLGTEMPLATE IDD_ABOUT 
 BEGIN
-    DIALOG  "About", IDD_ABOUT, 11, 21, 148, 100, NOT FS_DLGBORDER | 
-            FS_BORDER | WS_VISIBLE, FCF_TITLEBAR
-    BEGIN
-        CTEXT           "HanEdit/2 Ver 0.045", -1, 19, 76, 109, 13, 
-                        DT_VCENTER
-                        PRESPARAMS PP_FONTNAMESIZE, "14.Times New Roman"
-        CTEXT           "by Moon,Yousung", -1, 37, 60, 72, 8, DT_VCENTER
-        CTEXT           "(kwisatz@mail.hitel.net)", -1, 22, 51, 102, 8, 
-                        DT_VCENTER
-        DEFPUSHBUTTON   "Ok", DID_OK, 53, 8, 40, 11, BS_NOBORDER
-                        PRESPARAMS PP_BACKGROUNDCOLOR, 0x00FFFFFFL
-        CTEXT           "This program is freeware.", 824, 18, 37, 111, 8, 
-                        DT_VCENTER
-        CTEXT           "No warranty.", 825, 46, 29, 54, 8, DT_VCENTER
-                        PRESPARAMS PP_FOREGROUNDCOLOR, 0x00FF0000L
-    END
+	DIALOG "About", IDD_ABOUT, 0, 0, 137, 160, NOT FS_DLGBORDER |
+FS_BORDER | WS_VISIBLE, FCF_TITLEBAR
+	BEGIN
+		CTEXT "HanEdit/2 Ver 0.048", -1, 14, 136, 109, 13, DT_VCENTER
+		PRESPARAMS PP_FONTNAMESIZE , "14.Times New Roman"
+		CTEXT "by Moon,Yousung", -1, 32, 120, 72, 8, DT_VCENTER
+		CTEXT "(kwisatz@mail.hitel.net)", -1, 17, 112, 102, 8, DT_VCENTER
+		DEFPUSHBUTTON "Ok", DID_OK, 48, 15, 40, 11, BS_NOBORDER
+		PRESPARAMS PP_BACKGROUNDCOLOR , 0x00FFFFFFL
+		CTEXT "This program is freeware.", 824, 13, 46, 111, 8, DT_VCENTER
+		CTEXT "No warranty.", 825, 41, 38, 54, 8, DT_VCENTER
+		PRESPARAMS PP_FOREGROUNDCOLOR , 0x00FF0000L
+		CONTROL "for his contribution", 102, 33, 90, 70, 8, WC_STATIC, SS_TEXT | DT_CENTER | DT_VCENTER | WS_VISIBLE | WS_GROUP
+		CONTROL "Thanx to cresc", 101, 39, 98, 58, 8, WC_STATIC, SS_TEXT | DT_CENTER | DT_VCENTER | WS_VISIBLE | WS_GROUP
+		CONTROL "extended by KO Myung-Hun", 103, 16, 75, 104, 8, WC_STATIC, SS_TEXT | DT_CENTER | DT_VCENTER | WS_VISIBLE | WS_GROUP
+		CONTROL "(komh@chollian.net)", 104, 27, 67, 82, 8, WC_STATIC, SS_TEXT | DT_CENTER | DT_VCENTER | WS_VISIBLE | WS_GROUP
+	END
+
 END
 
 DLGTEMPLATE IDD_OPTIONS LOADONCALL MOVEABLE DISCARDABLE
 BEGIN
-    DIALOG  "Editor Options", IDD_OPTIONS, 10, 26, 151, 87, NOT FS_DLGBORDER | 
+    DIALOG  "Editor Options", IDD_OPTIONS, 10, 26, 151, 87, NOT FS_DLGBORDER |
             FS_BORDER | WS_VISIBLE, FCF_TITLEBAR
     BEGIN
         GROUPBOX        "Text Format", 831, 6, 48, 140, 37
-        AUTORADIOBUTTON "CR/LF (OS/2,DOS)", IDB_TF_CRLF, 13, 66, 95, 10, 
+        AUTORADIOBUTTON "CR/LF (OS/2,DOS)", IDB_TF_CRLF, 13, 66, 95, 10,
                         WS_TABSTOP
         AUTORADIOBUTTON "LF (Unix)", IDB_TF_LF, 13, 54, 54, 10, WS_TABSTOP
         GROUPBOX        "Han-Code", 834, 6, 6, 87, 40
-        AUTORADIOBUTTON "            ", IDB_HT_KS, 13, 24, 66, 12, 
+        AUTORADIOBUTTON "            ", IDB_HT_KS, 13, 24, 66, 12,
                         WS_TABSTOP
-        AUTORADIOBUTTON "            ", IDB_HT_SY, 13, 12, 66, 12, 
+        AUTORADIOBUTTON "            ", IDB_HT_SY, 13, 12, 66, 12,
                         WS_TABSTOP
         DEFPUSHBUTTON   "Ok", DID_OK, 98, 26, 40, 14, BS_NOBORDER
                         PRESPARAMS PP_BACKGROUNDCOLOR, 0x00FFFFFFL
         PUSHBUTTON      "Cancel", DID_CANCEL, 98, 10, 40, 14, BS_NOBORDER
                         PRESPARAMS PP_BACKGROUNDCOLOR, 0x00FF0000L
-        CONTROL         "상용 조합", -1, 25, 14, 49, 8, "HanStaticText", 
+        CONTROL         "상용 조합", -1, 25, 14, 49, 8, "HanStaticText",
                         WS_VISIBLE
-        CONTROL         "KS 완성형", -1, 25, 26, 49, 8, "HanStaticText", 
+        CONTROL         "KS 완성형", -1, 25, 26, 49, 8, "HanStaticText",
                         WS_VISIBLE
     END
 END
 
 DLGTEMPLATE IDD_FIND LOADONCALL MOVEABLE DISCARDABLE
 BEGIN
-    DIALOG  "Find", IDD_FIND, -127, -12, 153, 91, NOT FS_DLGBORDER | 
-            FS_BORDER | FS_MOUSEALIGN | WS_VISIBLE, FCF_TITLEBAR | 
+    DIALOG  "Find", IDD_FIND, -127, -12, 153, 91, NOT FS_DLGBORDER |
+            FS_BORDER | FS_MOUSEALIGN | WS_VISIBLE, FCF_TITLEBAR |
             FCF_NOBYTEALIGN
     BEGIN
-        CONTROL         "", IDHEF_FIND, 6, 68, 140, 10, "HanEntryField", 
+        CONTROL         "", IDHEF_FIND, 6, 68, 140, 10, "HanEntryField",
                         WS_TABSTOP | WS_VISIBLE | HES_MARGIN | HES_NOAUTOCREATEHIA
-        CONTROL         "", IDHEF_REPLACE, 6, 46, 140, 10, "HanEntryField", 
+        CONTROL         "", IDHEF_REPLACE, 6, 46, 140, 10, "HanEntryField",
                         WS_TABSTOP | WS_VISIBLE | HES_MARGIN | HES_NOAUTOCREATEHIA
-        CONTROL         "Find:", -1, 6, 79, 39, 8, "HanStaticText", 
+        CONTROL         "Find:", -1, 6, 79, 39, 8, "HanStaticText",
                         WS_VISIBLE
-        CONTROL         "Replace:", -1, 6, 57, 40, 8, "HanStaticText", 
+        CONTROL         "Replace:", -1, 6, 57, 40, 8, "HanStaticText",
                         WS_VISIBLE
-        AUTOCHECKBOX    "Case ~sensitive", IDB_CASESENSITIVE, 6, 33, 75, 10, 
+        AUTOCHECKBOX    "Case ~sensitive", IDB_CASESENSITIVE, 6, 33, 75, 10,
                         BS_AUTOSIZE | WS_GROUP
         PUSHBUTTON      "~Find", IDB_FIND, 6, 18, 42, 12
-        PUSHBUTTON      "~Replace,then find", IDB_REPLACEFIND, 50, 18, 96, 
+        PUSHBUTTON      "~Replace,then find", IDB_REPLACEFIND, 50, 18, 96,
                         12
         PUSHBUTTON      "Replace", IDB_REPLACE, 6, 4, 42, 12
         PUSHBUTTON      "Replace ~all", IDB_REPLACEALL, 50, 4, 55, 12
@@ -73,4 +75,3 @@ BEGIN
                         PRESPARAMS PP_BACKGROUNDCOLOR, 0x00FF0000L
     END
 END
-

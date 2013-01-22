@@ -38,7 +38,7 @@ static const BYTE MID_fromFST[2][20] = {			// determine MID-font from FST
 };
 
 static const BYTE LST_fromMID[22] =					// determine LST-font from MID
-{0,0,2,0,2,1,2,1,2,3,0,2,1,3,3,1,2,2,3,3,1,1};
+{0,0,2,0,2,1,2,1,2,3,0,2,1,3,3,1,2,/*2*/1,3,3,1,1};
 
 static const SHORT blank_font[16] =
 {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};

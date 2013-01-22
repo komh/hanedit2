@@ -1,3 +1,32 @@
+ver 0.048: (2000-10-16)
+  new:
+    .한글코드 자동인식
+    .Import/Export
+    .끼움/겹침 표시
+    
+ver 0.047: (99-2-17)
+  new:
+    .팝업메뉴
+    .AUTOINDENT (커맨드라인 옵션: -autoindent, -no-autoindent)
+    .minor enhancement
+  bugfix:
+    .Paste후 OVERWRITE모드에서 비정상입력이 일어나는 것 고침
+  known bugs/limitations
+    .마우스로 끌기 선택시, 느리게 마우스를 움직일 경우
+     자동 스크롤이 되지 않음.
+
+ver 0.046: (by cresc)
+  new:
+    .line/column 표시
+    .받침글꼴 오류 수정
+  known bugs/limitations
+    .버젼이 0.045a로 표시됨.
+
+ver 0.045a: (99-2-1)
+  bugfix:
+    .Find/ChangeAll에서 바뀔 문자열이 원래 문자열을 포함하고
+     있을 경우 무한루프에 빠지는 것 고침.
+
 ver 0.045: (98-8-23)
   new:
     .File을 Drag&Drop할 수 있음.

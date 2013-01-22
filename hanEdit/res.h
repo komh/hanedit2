@@ -7,25 +7,27 @@
 #define ID_HANMLE		101
 #define ID_STATBAR		102
 #define ID_TOOLBAR		103
+#define ID_POPUP        104
 
 #define IDM_FILE		110
 #define IDM_NEW			111
 #define IDM_OPEN		112
-#define IDM_RELOAD		113 // re-load file after change han-mode
-#define IDM_SAVE		114
-#define IDM_SAVEAS		115
-#define IDM_PROPERTIES	116
-#define IDM_OPTIONS		117
-#define IDM_QUICKRELOAD	118 // toolbar-quick-button version of IDM_RELOAD
-#define IDM_EXIT		119
+#define IDM_IMPORT      113
+#define IDM_RELOAD      114 // re-load file after change han-mode
+#define IDM_SAVE        115
+#define IDM_SAVEAS      116
+#define IDM_PROPERTIES  117
+#define IDM_OPTIONS     118
+#define IDM_QUICKRELOAD 119 // toolbar-quick-button version of IDM_RELOAD
+#define IDM_EXIT        120
 
-#define IDM_EDIT		120
-#define IDM_COPY		121
-#define IDM_CUT			122
-#define IDM_PASTE		123
-#define IDM_CLEAR		124
-#define IDM_FIND		125
-#define IDM_SELECTALL	126
+#define IDM_EDIT        130
+#define IDM_COPY        131
+#define IDM_CUT         132
+#define IDM_PASTE       133
+#define IDM_CLEAR       134
+#define IDM_FIND        135
+#define IDM_SELECTALL   136
 
 #define IDM_HELP		190
 #define IDM_ABOUT		191

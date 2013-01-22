@@ -20,56 +20,57 @@
 #include "HMLETextThunk.h"
 #include "HMLEDoc.h"
 
-#define WC_HMLE_Client	("HanMLE:Client")
+#define WC_HMLE_Client  ("HanMLE:Client")
 
 #define HMLMC_REFRESHCURSOR     (WM_USER+1)
-#define HMLMC_REFRESH			(WM_USER+2)
+#define HMLMC_REFRESH           (WM_USER+2)
 
-#define HMLECID_HIA				(TID_USERMAX-1)
-#define HMLECID_TIMER			(TID_USERMAX-2)
+#define HMLECID_HIA             (TID_USERMAX-1)
+#define HMLECID_TIMER           (TID_USERMAX-2)
 
-#define HMLE_DEFAULT_LINESIZE		4096
-#define HMLE_BORDERSIZE				1
+#define HMLE_DEFAULT_LINESIZE       4096
+#define HMLE_BORDERSIZE             1
 
-#define WINWORD_INSTANCE			0
+#define WINWORD_INSTANCE            0
 
-#define FKC_NONE(fl)		(!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
-#define FKC_EXALT(fl)		(!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_EXCTRL(fl)		(!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
-#define FKC_EXSHIFT(fl)		(!(fl & KC_SHIFT) && (fl & (KC_ALT|KC_CTRL)))
-#define FKC_HASALT(fl)		(fl & KC_ALT)
-#define FKC_HASCTRL(fl)		(fl & KC_CTRL)
-#define FKC_HASSHIFT(fl)	(fl & KC_SHIFT)
-#define FKC_ALTONLY(fl)		((fl & KC_ALT) && !(fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_CTRLONLY(fl)	((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
-#define FKC_SHIFTONLY(fl)	((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
+#define FKC_NONE(fl)        (!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
+#define FKC_EXALT(fl)       (!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
+#define FKC_EXCTRL(fl)      (!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
+#define FKC_EXSHIFT(fl)     (!(fl & KC_SHIFT) && (fl & (KC_ALT|KC_CTRL)))
+#define FKC_HASALT(fl)      (fl & KC_ALT)
+#define FKC_HASCTRL(fl)     (fl & KC_CTRL)
+#define FKC_HASSHIFT(fl)    (fl & KC_SHIFT)
+#define FKC_ALTONLY(fl)     ((fl & KC_ALT) && !(fl & (KC_SHIFT|KC_CTRL)))
+#define FKC_CTRLONLY(fl)    ((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
+#define FKC_SHIFTONLY(fl)   ((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
 
 typedef struct tagHMLE {
-	HMLECTLDATA *pCtlData;
-	HWND hwndHMLE;
-	HWND hwndClient;
-	HWND hwndHIA;
-	HMLEDoc *doc;
-//	HMLEIpt btnDownIpt;
+    HMLECTLDATA *pCtlData;
+    HWND hwndHMLE;
+    HWND hwndClient;
+    HWND hwndHIA;
+    HMLEDoc *doc;
+//  HMLEIpt btnDownIpt;
 
-	PVOID bufImportExport;
-	ULONG ieBufSize;
+    PVOID bufImportExport;
+    ULONG ieBufSize;
 
-	HMLEFILEDROPNOTIF *dropFileNotif;
+    HMLEFILEDROPNOTIF *dropFileNotif;
 
-	int han_type;
-	int eol_type;
-	LONG fgColor;
-	LONG bgColor;
-	LONG selfgColor;
-	LONG selbgColor;
+    int han_type;
+    int eol_type;
+    LONG fgColor;
+    LONG bgColor;
+    LONG selfgColor;
+    LONG selbgColor;
 
-	BOOL readonly;
-	BOOL connectedToHIA;
+    BOOL autoIndent;
+    BOOL readonly;
+    BOOL connectedToHIA;
 
-	int xSize,ySize;
-	int beginLineN;
-	int beginColN;
+    int xSize,ySize;
+    int beginLineN;
+    int beginColN;
 } HMLE;
 
 MRESULT APIENTRY HMLEWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2);

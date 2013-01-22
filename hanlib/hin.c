@@ -3,22 +3,22 @@
 #include "hin.h"
 #include "hin_internal.h"
 
-#define FKC_NONE(fl)		 (!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
+#define FKC_NONE(fl)         (!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
 
-#define FKC_EXALT(fl)		 (!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_EXCTRL(fl)		 (!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
+#define FKC_EXALT(fl)        (!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
+#define FKC_EXCTRL(fl)       (!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
 #define FKC_EXSHIFT(fl)      (!(fl & KC_SHIFT) && (fl & (KC_ALT|KC_CTRL)))
 
-#define FKC_HASALT(fl)			(fl & KC_ALT)
+#define FKC_HASALT(fl)          (fl & KC_ALT)
 #define FKC_HASCTRL(fl)         (fl & KC_CTRL)
-#define FKC_HASSHIFT(fl)		(fl & KC_SHIFT)
+#define FKC_HASSHIFT(fl)        (fl & KC_SHIFT)
 
 #define FKC_ALTONLY(fl)      ((fl & KC_ALT) && !(fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_CTRLONLY(fl)	 ((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
-#define FKC_SHIFTONLY(fl)	 ((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
+#define FKC_CTRLONLY(fl)     ((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
+#define FKC_SHIFTONLY(fl)    ((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
 
-#define HIA_cbWINDOWDATA		4
-#define WINWORD_INSTANCE		0
+#define HIA_cbWINDOWDATA        4
+#define WINWORD_INSTANCE        0
 
 MRESULT APIENTRY HIA_WndProc(HWND hwnd,ULONG msg,MPARAM mp1,MPARAM mp2);
 
@@ -92,277 +92,277 @@ static unsigned char kbdtable[3][96] = {
 
 USHORT hia_convertkey (ULONG kbdtype,USHORT key)
 {
-	return (kbdtable[kbdtype][key-32] & 0xFF);
+    return (kbdtable[kbdtype][key-32] & 0xFF);
 }
 
 ULONG hia_iskeypadkey(UCHAR ucScancode)
 {
-	if (((ucScancode >= 71) && (ucScancode <= 83)) ||
-		(ucScancode == 92) || (ucScancode == 90) ||
-		(ucScancode == 55)) return TRUE;
-	return FALSE;
+    if (((ucScancode >= 71) && (ucScancode <= 83)) ||
+        (ucScancode == 92) || (ucScancode == 90) ||
+        (ucScancode == 55)) return TRUE;
+    return FALSE;
 }
 
 BOOL RegisterHanAutomataClass(HAB hab)
 {
-	return WinRegisterClass(hab,WCOBJ_HIA,HIA_WndProc,0,HIA_cbWINDOWDATA);
+    return WinRegisterClass(hab,WCOBJ_HIA,HIA_WndProc,0,HIA_cbWINDOWDATA);
 }
 
 HWND HIACreateHanAutomata(HWND hwndOwner,ULONG uId)
 {
-	return WinCreateWindow(HWND_OBJECT,WCOBJ_HIA,NULL,0,0,0,0,0,hwndOwner,
-				HWND_TOP,uId,NULL,NULL);
+    return WinCreateWindow(HWND_OBJECT,WCOBJ_HIA,NULL,0,0,0,0,0,hwndOwner,
+                HWND_TOP,uId,NULL,NULL);
 }
 
 MRESULT APIENTRY HIA_WndProc(HWND hwnd,ULONG msg,MPARAM mp1,MPARAM mp2)
 {
    switch (msg) {
-   case WM_CREATE:				return hia_wmCreate(hwnd,mp1,mp2);
-   case WM_DESTROY:				return hia_wmDestroy(hwnd,mp1,mp2);
-   case WM_CHAR:				return hia_wmChar(hwnd,mp1,mp2);
+   case WM_CREATE:              return hia_wmCreate(hwnd,mp1,mp2);
+   case WM_DESTROY:             return hia_wmDestroy(hwnd,mp1,mp2);
+   case WM_CHAR:                return hia_wmChar(hwnd,mp1,mp2);
 
-   case HIAM_CONNECT:			return hia_usermConnect(hwnd,mp1,mp2);
-   case HIAM_REGISTERNOTIFY:	return hia_usermRegisterNotify(hwnd,mp1,mp2);
-   case HIAM_UNREGISTERNOTIFY:	return hia_usermUnregisterNotify(hwnd,mp1,mp2);
+   case HIAM_CONNECT:           return hia_usermConnect(hwnd,mp1,mp2);
+   case HIAM_REGISTERNOTIFY:    return hia_usermRegisterNotify(hwnd,mp1,mp2);
+   case HIAM_UNREGISTERNOTIFY:  return hia_usermUnregisterNotify(hwnd,mp1,mp2);
 
-   case HIAM_COMPLETEHCH:		return hia_usermCompleteHch(hwnd,mp1,mp2);
-   case HIAM_CANCELBUF:			return hia_usermCancelBuf(hwnd,mp1,mp2);
-   case HIAM_CANCELKEY:			return hia_usermCancelKey(hwnd,mp1,mp2);
-   case HIAM_CHANGEHANMODE:		return hia_usermChangeHanMode(hwnd,mp1,mp2);
-   case HIAM_CHANGEINSERTMODE:	return hia_usermChangeInsertMode(hwnd,mp1,mp2);
-   case HIAM_CHANGEKBDTYPE:		return hia_usermChangeKbdType(hwnd,mp1,mp2);
-   case HIAM_SETKBDTYPE:		return hia_usermSetKbdType(hwnd,mp1,mp2);
-   case HIAM_SETHANMODE:		return hia_usermSetHanMode(hwnd,mp1,mp2);
-   case HIAM_SETINSERTMODE:		return hia_usermSetInsertMode(hwnd,mp1,mp2);
-   case HIAM_QUERYWORKINGHCH:	return hia_usermQueryWorkingHch(hwnd,mp1,mp2);
-   case HIAM_QUERYSTATE:		return hia_usermQueryState(hwnd,mp1,mp2);
-   default:						return WinDefWindowProc(hwnd,msg,mp1,mp2);
+   case HIAM_COMPLETEHCH:       return hia_usermCompleteHch(hwnd,mp1,mp2);
+   case HIAM_CANCELBUF:         return hia_usermCancelBuf(hwnd,mp1,mp2);
+   case HIAM_CANCELKEY:         return hia_usermCancelKey(hwnd,mp1,mp2);
+   case HIAM_CHANGEHANMODE:     return hia_usermChangeHanMode(hwnd,mp1,mp2);
+   case HIAM_CHANGEINSERTMODE:  return hia_usermChangeInsertMode(hwnd,mp1,mp2);
+   case HIAM_CHANGEKBDTYPE:     return hia_usermChangeKbdType(hwnd,mp1,mp2);
+   case HIAM_SETKBDTYPE:        return hia_usermSetKbdType(hwnd,mp1,mp2);
+   case HIAM_SETHANMODE:        return hia_usermSetHanMode(hwnd,mp1,mp2);
+   case HIAM_SETINSERTMODE:     return hia_usermSetInsertMode(hwnd,mp1,mp2);
+   case HIAM_QUERYWORKINGHCH:   return hia_usermQueryWorkingHch(hwnd,mp1,mp2);
+   case HIAM_QUERYSTATE:        return hia_usermQueryState(hwnd,mp1,mp2);
+   default:                     return WinDefWindowProc(hwnd,msg,mp1,mp2);
    }
 }
 
 MRESULT hia_wmCreate(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = NULL;
-HIABuf	*hiabuf = NULL;
+HIABuf  *hiabuf = NULL;
 HIANotifWnd *notifList = NULL;
 ULONG notifListAllocSize = HIA_NOTIFLIST_DEFAULT_SIZE;
-HWND	hwndOwner = WinQueryWindow(hwnd,QW_OWNER);
-USHORT	Id		= WinQueryWindowUShort(hwnd,QWS_ID);
+HWND    hwndOwner = WinQueryWindow(hwnd,QW_OWNER);
+USHORT  Id      = WinQueryWindowUShort(hwnd,QWS_ID);
 int i;
 
-	if (DosAllocMem((PPVOID)&hiabuf,sizeof(HIABuf),fALLOC))
-		return MRFROMLONG(TRUE);
+    if (DosAllocMem((PPVOID)&hiabuf,sizeof(HIABuf),fALLOC))
+        return MRFROMLONG(TRUE);
 #ifdef DEBUG
-	assert(hiabuf!=NULL);
+    assert(hiabuf!=NULL);
 #endif
-	HIABufClear(hiabuf);
+    HIABufClear(hiabuf);
 
-	if (DosAllocMem((PPVOID)&notifList,sizeof(HIANotifWnd)*notifListAllocSize,fALLOC))
-		return MRFROMLONG(TRUE);
+    if (DosAllocMem((PPVOID)&notifList,sizeof(HIANotifWnd)*notifListAllocSize,fALLOC))
+        return MRFROMLONG(TRUE);
 #ifdef DEBUG
-	assert(notifList!=NULL);
+    assert(notifList!=NULL);
 #endif
-	for (i=0;i<notifListAllocSize;i++)
-		{
-		notifList[i].hwnd = NULLHANDLE;
-		notifList[i].id = 0;
-		}
+    for (i=0;i<notifListAllocSize;i++)
+        {
+        notifList[i].hwnd = NULLHANDLE;
+        notifList[i].id = 0;
+        }
 
-	if (DosAllocMem((PPVOID)&hia,sizeof(HIA),fALLOC))
-		return MRFROMLONG(TRUE);
+    if (DosAllocMem((PPVOID)&hia,sizeof(HIA),fALLOC))
+        return MRFROMLONG(TRUE);
 #ifdef DEBUG
-	assert(hia!=NULL);
+    assert(hia!=NULL);
 #endif
 
-	hia->hwndHIA = hwnd;
-	hia->inbuf = hiabuf;
-	hia->kbdtype = HAN_KBD_2;
-	hia->hanmode = HCH_ENG;
-	hia->insertmode = HAN_INSERT;
-	hia->hcode = HCH_JSY;
+    hia->hwndHIA = hwnd;
+    hia->inbuf = hiabuf;
+    hia->kbdtype = HAN_KBD_2;
+    hia->hanmode = HCH_ENG;
+    hia->insertmode = HAN_INSERT;
+    hia->hcode = HCH_JSY;
 
-	hia->notifListAllocSize = notifListAllocSize;
-	hia->notifList = notifList;
-	hia->notifList[0].hwnd = hwndOwner;
-	hia->notifList[0].id = Id;
-	hia->responseTo = &(hia->notifList[0]);
+    hia->notifListAllocSize = notifListAllocSize;
+    hia->notifList = notifList;
+    hia->notifList[0].hwnd = hwndOwner;
+    hia->notifList[0].id = Id;
+    hia->responseTo = &(hia->notifList[0]);
 
-	if (!WinSetWindowPtr(hwnd,WINWORD_INSTANCE,(PVOID)hia))
-		return MRFROMLONG(TRUE);
+    if (!WinSetWindowPtr(hwnd,WINWORD_INSTANCE,(PVOID)hia))
+        return MRFROMLONG(TRUE);
 
-	return 0L;
+    return 0L;
 }
 
 MRESULT hia_wmDestroy(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-	DosFreeMem(hia->notifList);
-	DosFreeMem(hia->inbuf);
-	DosFreeMem(hia);
+    DosFreeMem(hia->notifList);
+    DosFreeMem(hia->inbuf);
+    DosFreeMem(hia);
 
-	return 0L;
+    return 0L;
 }
 
 MRESULT hia_wmChar(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
-USHORT	fsFlags = SHORT1FROMMP(mp1);
-UCHAR	ucVkey	= CHAR3FROMMP(mp2);
-UCHAR	ucChar	= CHAR1FROMMP(mp2);
-UCHAR	ucScancode = CHAR4FROMMP(mp1);
+USHORT  fsFlags = SHORT1FROMMP(mp1);
+UCHAR   ucVkey  = CHAR3FROMMP(mp2);
+UCHAR   ucChar  = CHAR1FROMMP(mp2);
+UCHAR   ucScancode = CHAR4FROMMP(mp1);
 
-HIA 	*hia	= WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HIA     *hia    = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
 USHORT ckey;
 
-//	printf("HIA:: WM_CHAR\n");
+//  printf("HIA:: WM_CHAR\n");
 
-	if (fsFlags & KC_KEYUP) return 0L;
-	if (fsFlags & KC_VIRTUALKEY)
-		{
-		switch (ucVkey) {
-		case VK_SPACE:
-			WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-			if (FKC_SHIFTONLY(fsFlags))
-				WinSendMsg(hwnd,HIAM_CHANGEHANMODE,0L,0L);
-			else if (FKC_CTRLONLY(fsFlags))
-				WinSendMsg(hwnd,HIAM_CHANGEKBDTYPE,0L,0L);
-			else if (FKC_NONE(fsFlags))
-				HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(' ',0));
-			return MRFROMLONG(TRUE);	// consumed
-			break;
-		case VK_TAB:
-			WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-			if (FKC_NONE(fsFlags))
-				{
-				HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT('\t',0));
-				return MPFROMLONG(TRUE);	// consumed
-				} else {
-				return MPFROMLONG(FALSE);
-				}
-			break;
-		case VK_HOME:
-		case VK_END:
-		case VK_LEFT:
-		case VK_UP:
-		case VK_DOWN:
-		case VK_PAGEUP:
-		case VK_PAGEDOWN:
-		case VK_DELETE:
-			if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;	// considering keypad
-			if (hia->inbuf->newpos != HIABUF_NONE)
-				WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-			return MPFROMLONG(FALSE);
-			break;
-		case VK_ENTER:
-		case VK_NEWLINE:
-			if (hia->inbuf->newpos != HIABUF_NONE)
-				WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-			return MPFROMLONG(FALSE);	// not consumed
-			break;
-		case VK_RIGHT:
-			if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;   // considering keypad
-			if (hia->inbuf->newpos != HIABUF_NONE)
-				{
-				WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-				return MRFROMLONG(TRUE);
-				} else {
-				return MRFROMLONG(FALSE);	// NOT consumed
-				}
-			break;
-		case VK_BACKSPACE:
-			if (hia->inbuf->newpos != HIABUF_NONE)
-				{
-				WinSendMsg(hwnd,HIAM_CANCELKEY,0L,0L);
-				return MRFROMLONG(TRUE);
-				} else {
-				return MRFROMLONG(FALSE);
-				}
-			break;
-		case VK_INSERT:
-			if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;   // considering keypad
-			if (hia->inbuf->newpos != HIABUF_NONE)
-				WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-			if (FKC_NONE(fsFlags))
-				{
-				WinSendMsg(hwnd,HIAM_CHANGEINSERTMODE,0L,0L);
-				return MRFROMLONG(TRUE);
-				} else {
-				return MRFROMLONG(FALSE);
-				}
-			break;
-		}	// switch
-		} // Virtualkey
+    if (fsFlags & KC_KEYUP) return 0L;
+    if (fsFlags & KC_VIRTUALKEY)
+        {
+        switch (ucVkey) {
+        case VK_SPACE:
+            WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+            if (FKC_SHIFTONLY(fsFlags))
+                WinSendMsg(hwnd,HIAM_CHANGEHANMODE,0L,0L);
+            else if (FKC_CTRLONLY(fsFlags))
+                WinSendMsg(hwnd,HIAM_CHANGEKBDTYPE,0L,0L);
+            else if (FKC_NONE(fsFlags))
+                HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(' ',0));
+            return MRFROMLONG(TRUE);    // consumed
+            break;
+        case VK_TAB:
+            WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+            if (FKC_NONE(fsFlags))
+                {
+                HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT('\t',0));
+                return MPFROMLONG(TRUE);    // consumed
+                } else {
+                return MPFROMLONG(FALSE);
+                }
+            break;
+        case VK_HOME:
+        case VK_END:
+        case VK_LEFT:
+        case VK_UP:
+        case VK_DOWN:
+        case VK_PAGEUP:
+        case VK_PAGEDOWN:
+        case VK_DELETE:
+            if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;  // considering keypad
+            if (hia->inbuf->newpos != HIABUF_NONE)
+                WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+            return MPFROMLONG(FALSE);
+            break;
+        case VK_ENTER:
+        case VK_NEWLINE:
+            if (hia->inbuf->newpos != HIABUF_NONE)
+                WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+            return MPFROMLONG(FALSE);   // not consumed
+            break;
+        case VK_RIGHT:
+            if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;   // considering keypad
+            if (hia->inbuf->newpos != HIABUF_NONE)
+                {
+                WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+                return MRFROMLONG(TRUE);
+                } else {
+                return MRFROMLONG(FALSE);   // NOT consumed
+                }
+            break;
+        case VK_BACKSPACE:
+            if (hia->inbuf->newpos != HIABUF_NONE)
+                {
+                WinSendMsg(hwnd,HIAM_CANCELKEY,0L,0L);
+                return MRFROMLONG(TRUE);
+                } else {
+                return MRFROMLONG(FALSE);
+                }
+            break;
+        case VK_INSERT:
+            if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;   // considering keypad
+            if (hia->inbuf->newpos != HIABUF_NONE)
+                WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+            if (FKC_NONE(fsFlags))
+                {
+                WinSendMsg(hwnd,HIAM_CHANGEINSERTMODE,0L,0L);
+                return MRFROMLONG(TRUE);
+                } else {
+                return MRFROMLONG(FALSE);
+                }
+            break;
+        }   // switch
+        } // Virtualkey
 
-	if ((fsFlags & KC_CTRL) || (fsFlags & KC_ALT)) return FALSE;
-	if ((ucChar < 32) || (ucChar > 127))
-		return FALSE;	// not consumed
+    if ((fsFlags & KC_CTRL) || (fsFlags & KC_ALT)) return FALSE;
+    if ((ucChar < 32) || (ucChar > 127))
+        return FALSE;   // not consumed
 
-	if (hia->hanmode == HCH_ENG)
-		{
-		HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(ucChar,0));
-		return MRFROMLONG(TRUE);
-		}
+    if (hia->hanmode == HCH_ENG)
+        {
+        HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(ucChar,0));
+        return MRFROMLONG(TRUE);
+        }
 
-	if ((hia_iskeypadkey(ucScancode))&&(fsFlags & KC_CHAR))
-		{
-		WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-		HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(ucChar,0));
-		return MRFROMLONG(TRUE);
-		}
+    if ((hia_iskeypadkey(ucScancode))&&(fsFlags & KC_CHAR))
+        {
+        WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+        HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(ucChar,0));
+        return MRFROMLONG(TRUE);
+        }
 
-	if (WinGetKeyState(HWND_DESKTOP,VK_CAPSLOCK))
-		{
-		if (fsFlags & KC_SHIFT)
-			{
-			ucChar = toupper(ucChar);
-			} else {
-			ucChar = tolower(ucChar);
-			}
-		}
-	ckey = hia_convertkey(hia->kbdtype,ucChar);
-	{
-	HANCHAR completedHch;
-	HANCHAR workingHch;
-	if (ckey & 0x80)	// if hangul key
-		{
-		ULONG oldbufState = hia->inbuf->newpos;
-		if (hia->kbdtype == HAN_KBD_2)
-			completedHch = HIAAutomata2(hia,ckey);
-			else
-			completedHch = HIAAutomata3(hia,ckey);
-		workingHch = SHORT1FROMMR(WinSendMsg(hwnd,HIAM_QUERYWORKINGHCH,0L,0L));
+    if (WinGetKeyState(HWND_DESKTOP,VK_CAPSLOCK))
+        {
+        if (fsFlags & KC_SHIFT)
+            {
+            ucChar = toupper(ucChar);
+            } else {
+            ucChar = tolower(ucChar);
+            }
+        }
+    ckey = hia_convertkey(hia->kbdtype,ucChar);
+    {
+    HANCHAR completedHch;
+    HANCHAR workingHch;
+    if (ckey & 0x80)    // if hangul key
+        {
+        ULONG oldbufState = hia->inbuf->newpos;
+        if (hia->kbdtype == HAN_KBD_2)
+            completedHch = HIAAutomata2(hia,ckey);
+            else
+            completedHch = HIAAutomata3(hia,ckey);
+        workingHch = SHORT1FROMMR(WinSendMsg(hwnd,HIAM_QUERYWORKINGHCH,0L,0L));
 
-		if (completedHch)		// if hch completed
-			{
-			HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROM2SHORT(completedHch,workingHch));
-			HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(completedHch,workingHch));
-			if (workingHch)		// begin composition of new hch
-				HIA_NotifyToConnected(hia,HIAN_COMPO_BEGIN,MPFROM2SHORT(completedHch,workingHch));
-					
-			} else {	// if hch not completed
+        if (completedHch)       // if hch completed
+            {
+            HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROM2SHORT(completedHch,workingHch));
+            HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(completedHch,workingHch));
+            if (workingHch)     // begin composition of new hch
+                HIA_NotifyToConnected(hia,HIAN_COMPO_BEGIN,MPFROM2SHORT(completedHch,workingHch));
 
-			if (workingHch)		// if exist composing hch
-			if (oldbufState)
-				HIA_NotifyToConnected(hia,HIAN_COMPO_STEP,
-					MPFROM2SHORT(0,workingHch));
-				else
-				HIA_NotifyToConnected(hia,HIAN_COMPO_BEGIN,
-					MPFROM2SHORT(0,workingHch));
-			}
+            } else {    // if hch not completed
 
-		return MRFROMLONG(TRUE);	// consumed
+            if (workingHch)     // if exist composing hch
+            if (oldbufState)
+                HIA_NotifyToConnected(hia,HIAN_COMPO_STEP,
+                    MPFROM2SHORT(0,workingHch));
+                else
+                HIA_NotifyToConnected(hia,HIAN_COMPO_BEGIN,
+                    MPFROM2SHORT(0,workingHch));
+            }
 
-		} else {  // !@#$%^&*() ,etc
+        return MRFROMLONG(TRUE);    // consumed
 
-		WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
-		HIA_NotifyToConnected(hia,HIAN_INSERTHCH,
-			MPFROM2SHORT(ckey,0));
-		return MRFROMLONG(TRUE);	// consumed
+        } else {  // !@#$%^&*() ,etc
 
-		}
-		}
-	return MRFROMLONG(FALSE);	 // not consumed
+        WinSendMsg(hwnd,HIAM_COMPLETEHCH,0L,0L);
+        HIA_NotifyToConnected(hia,HIAN_INSERTHCH,
+            MPFROM2SHORT(ckey,0));
+        return MRFROMLONG(TRUE);    // consumed
+
+        }
+        }
+    return MRFROMLONG(FALSE);    // not consumed
 }
 
 MRESULT hia_usermCompleteHch(HWND hwnd,MPARAM mp1,MPARAM mp2)
@@ -370,28 +370,28 @@ MRESULT hia_usermCompleteHch(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 HANCHAR hch;
 
-//	printf("HIAM_COMPLETEHCH\n");
+//  printf("HIAM_COMPLETEHCH\n");
 
-	if (hia->inbuf->newpos == HIABUF_NONE) return 0L;
-	hch = HIABufPeekHch(hia->inbuf);
-	HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROM2SHORT(hch,0));
-	HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(hch,0));
-	HIABufClear(hia->inbuf);
+    if (hia->inbuf->newpos == HIABUF_NONE) return 0L;
+    hch = HIABufPeekHch(hia->inbuf);
+    HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROM2SHORT(hch,0));
+    HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROM2SHORT(hch,0));
+    HIABufClear(hia->inbuf);
 
-	return MRFROM2SHORT(hch,0);
+    return MRFROM2SHORT(hch,0);
 }
 
 MRESULT hia_usermCancelBuf(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
-ULONG	temp;
+ULONG   temp;
 
-//	printf("HIAM_CANCELBUF\n");
+//  printf("HIAM_CANCELBUF\n");
 
-	temp = hia->inbuf->newpos;
-	HIABufClear(hia->inbuf);
-	HIA_NotifyToConnected(hia,HIAN_COMPO_CANCEL,0);
-	return MRFROMLONG(temp);
+    temp = hia->inbuf->newpos;
+    HIABufClear(hia->inbuf);
+    HIA_NotifyToConnected(hia,HIAN_COMPO_CANCEL,0);
+    return MRFROMLONG(temp);
 }
 
 MRESULT hia_usermCancelKey(HWND hwnd,MPARAM mp1,MPARAM mp2)
@@ -399,94 +399,94 @@ MRESULT hia_usermCancelKey(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 HANCHAR hch;
 
-//	printf("HIAM_CANCELKEY\n");
+//  printf("HIAM_CANCELKEY\n");
 
-	HIABufPop(hia->inbuf);
-	hch = HIABufPeekHch(hia->inbuf);
-	if (hia->inbuf->newpos)
-		HIA_NotifyToConnected(hia,HIAN_COMPO_STEPBACK,
-			MPFROM2SHORT(0,hch));
-		else
-		HIA_NotifyToConnected(hia,HIAN_COMPO_CANCEL,0);
-	return MRFROM2SHORT(hch,0);
+    HIABufPop(hia->inbuf);
+    hch = HIABufPeekHch(hia->inbuf);
+    if (hia->inbuf->newpos)
+        HIA_NotifyToConnected(hia,HIAN_COMPO_STEPBACK,
+            MPFROM2SHORT(0,hch));
+        else
+        HIA_NotifyToConnected(hia,HIAN_COMPO_CANCEL,0);
+    return MRFROM2SHORT(hch,0);
 }
 
 MRESULT hia_usermChangeHanMode(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-//	printf("HIAM_CHANGEHANMODE\n");
+//  printf("HIAM_CHANGEHANMODE\n");
 
-	if (hia->hanmode == HCH_HAN)
-		hia->hanmode = HCH_ENG;
-		else
-		hia->hanmode = HCH_HAN;
-	HIA_NotifyToList(hia,HIAN_HANMODECHANGED,MPFROMLONG(hia->hanmode));
+    if (hia->hanmode == HCH_HAN)
+        hia->hanmode = HCH_ENG;
+        else
+        hia->hanmode = HCH_HAN;
+    HIA_NotifyToList(hia,HIAN_HANMODECHANGED,MPFROMLONG(hia->hanmode));
 
-	return MRFROMLONG(TRUE);
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermChangeInsertMode(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-//	printf("HIAM_CHANGEINSERTMODE\n");
+//  printf("HIAM_CHANGEINSERTMODE\n");
 
-	if (hia->insertmode == HAN_INSERT)
-		hia->insertmode = HAN_OVERWRITE;
-		else
-		hia->insertmode = HAN_INSERT;
-		
-	HIA_NotifyToList(hia,HIAN_INSERTMODECHANGED,MPFROMLONG(hia->insertmode));
-	return MRFROMLONG(TRUE);
+    if (hia->insertmode == HAN_INSERT)
+        hia->insertmode = HAN_OVERWRITE;
+        else
+        hia->insertmode = HAN_INSERT;
+
+    HIA_NotifyToList(hia,HIAN_INSERTMODECHANGED,MPFROMLONG(hia->insertmode));
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermChangeKbdType(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
-HIA		*hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HIA     *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-//	printf("HIAM_CHANGEKBDTYPE\n");
+//  printf("HIAM_CHANGEKBDTYPE\n");
 
-	switch (hia->kbdtype) {
-	case HAN_KBD_2:			hia->kbdtype = HAN_KBD_390;	break;
-	case HAN_KBD_390:		hia->kbdtype = HAN_KBD_3FINAL;	break;
-	case HAN_KBD_3FINAL:	hia->kbdtype = HAN_KBD_2;		break;
-	default:				hia->kbdtype = HAN_KBD_2;		break;
-	}
+    switch (hia->kbdtype) {
+    case HAN_KBD_2:         hia->kbdtype = HAN_KBD_390; break;
+    case HAN_KBD_390:       hia->kbdtype = HAN_KBD_3FINAL;  break;
+    case HAN_KBD_3FINAL:    hia->kbdtype = HAN_KBD_2;       break;
+    default:                hia->kbdtype = HAN_KBD_2;       break;
+    }
 
-	HIA_NotifyToList(hia,HIAN_KBDTYPECHANGED,MPFROMLONG(hia->kbdtype));
-	return MRFROMLONG(TRUE);
+    HIA_NotifyToList(hia,HIAN_KBDTYPECHANGED,MPFROMLONG(hia->kbdtype));
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermSetKbdType(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
-HIA		*hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HIA     *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-	hia->kbdtype = (ULONG)mp1;
-	HIA_NotifyToList(hia,HIAN_KBDTYPECHANGED,MPFROMLONG(hia->kbdtype));
-	return MRFROMLONG(TRUE);
+    hia->kbdtype = (ULONG)mp1;
+    HIA_NotifyToList(hia,HIAN_KBDTYPECHANGED,MPFROMLONG(hia->kbdtype));
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermSetHanMode(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
-HIA		*hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HIA     *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-	hia->hanmode = (ULONG)mp1;
-	if ((hia->hanmode != HCH_HAN) && (hia->hanmode != HCH_ENG))
-		hia->hanmode = HCH_ENG;
-	HIA_NotifyToList(hia,HIAN_HANMODECHANGED,MPFROMLONG(hia->hanmode));
-	return MRFROMLONG(TRUE);
+    hia->hanmode = (ULONG)mp1;
+    if ((hia->hanmode != HCH_HAN) && (hia->hanmode != HCH_ENG))
+        hia->hanmode = HCH_ENG;
+    HIA_NotifyToList(hia,HIAN_HANMODECHANGED,MPFROMLONG(hia->hanmode));
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermSetInsertMode(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
-HIA		*hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HIA     *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-	hia->insertmode = (ULONG)mp1;
-	if ((hia->insertmode != HAN_INSERT) && (hia->insertmode != HAN_OVERWRITE))
-		hia->hanmode = HAN_INSERT;
-	HIA_NotifyToList(hia,HIAN_KBDTYPECHANGED,MPFROMLONG(hia->insertmode));
-	return MRFROMLONG(TRUE);
+    hia->insertmode = (ULONG)mp1;
+    if ((hia->insertmode != HAN_INSERT) && (hia->insertmode != HAN_OVERWRITE))
+        hia->hanmode = HAN_INSERT;
+    HIA_NotifyToList(hia,HIAN_INSERTMODECHANGED,MPFROMLONG(hia->insertmode));
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermQueryWorkingHch(HWND hwnd,MPARAM mp1,MPARAM mp2)
@@ -494,69 +494,69 @@ MRESULT hia_usermQueryWorkingHch(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 HANCHAR hch;
 
-//	printf("HIAM_QUERYWORKINGHCH\n");
-	
-	hch = HIABufPeekHch(hia->inbuf);
+//  printf("HIAM_QUERYWORKINGHCH\n");
 
-	return MRFROMSHORT(hch);
+    hch = HIABufPeekHch(hia->inbuf);
+
+    return MRFROMSHORT(hch);
 }
 
 MRESULT hia_usermQueryState(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
-ULONG	flState = 0;
+ULONG   flState = 0;
 
-//	printf("HIAM_QUERYSTATE\n");
+//  printf("HIAM_QUERYSTATE\n");
 
-	flState = (hia->inbuf->newpos) << 16;
-	
-	if (hia->hanmode == HCH_HAN)
-		flState |= HIAST_HANMODE;
-		
-	if (hia->insertmode == HAN_INSERT)
-		flState |= HIAST_INSERTMODE;
-		
-	if (hia->kbdtype == HAN_KBD_390)
-		flState |= HIAST_KBD390;
-	else if (hia->kbdtype == HAN_KBD_3FINAL)
-		flState |= HIAST_KBD3FINAL;
-		
-		
-	if (hia->hcode == HCH_WKS)
-		flState |= HIAST_KSMODE;
+    flState = (hia->inbuf->newpos) << 16;
 
-	return MRFROMLONG(flState);
+    if (hia->hanmode == HCH_HAN)
+        flState |= HIAST_HANMODE;
+
+    if (hia->insertmode == HAN_INSERT)
+        flState |= HIAST_INSERTMODE;
+
+    if (hia->kbdtype == HAN_KBD_390)
+        flState |= HIAST_KBD390;
+    else if (hia->kbdtype == HAN_KBD_3FINAL)
+        flState |= HIAST_KBD3FINAL;
+
+
+    if (hia->hcode == HCH_WKS)
+        flState |= HIAST_KSMODE;
+
+    return MRFROMLONG(flState);
 }
 
 MRESULT hia_usermConnect(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
-	if (mp1!=NULL)
-		{
-		int i;
-		
-		for (i=0;i<hia->notifListAllocSize;i++)
-			if (hia->notifList[i].hwnd == (HWND)mp1)
-				{
-				HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(FALSE));
-				hia->responseTo = &(hia->notifList[i]);
-				HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(TRUE));
-				return MRFROMLONG(TRUE);
-				}
-		return MRFROMLONG(FALSE);
+    if (mp1!=NULL)
+        {
+        int i;
 
-		} else {
+        for (i=0;i<hia->notifListAllocSize;i++)
+            if (hia->notifList[i].hwnd == (HWND)mp1)
+                {
+                HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(FALSE));
+                hia->responseTo = &(hia->notifList[i]);
+                HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(TRUE));
+                return MRFROMLONG(TRUE);
+                }
+        return MRFROMLONG(FALSE);
 
-		if (hia->responseTo != &(hia->notifList[0]))
-			{
-			HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(FALSE));
-			hia->responseTo = &(hia->notifList[0]);
-			HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(TRUE));
-			}
-		}
+        } else {
 
-	return MRFROMLONG(TRUE);
+        if (hia->responseTo != &(hia->notifList[0]))
+            {
+            HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(FALSE));
+            hia->responseTo = &(hia->notifList[0]);
+            HIA_NotifyToConnected(hia,HIAN_CONNECT,MPFROMLONG(TRUE));
+            }
+        }
+
+    return MRFROMLONG(TRUE);
 }
 
 MRESULT hia_usermRegisterNotify(HWND hwnd,MPARAM mp1,MPARAM mp2)
@@ -564,16 +564,16 @@ MRESULT hia_usermRegisterNotify(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 int i;
 
-	if (mp1==NULL) return MRFROMLONG(FALSE);
+    if (mp1==NULL) return MRFROMLONG(FALSE);
 
-	for (i=0;i<hia->notifListAllocSize;i++)
-		if (hia->notifList[i].hwnd==NULLHANDLE)
-			{
-			hia->notifList[i].hwnd = (HWND)mp1;
-			hia->notifList[i].id = SHORT1FROMMP(mp2);
-			return MRFROMLONG(TRUE);
-			}
-	return MRFROMLONG(FALSE);
+    for (i=0;i<hia->notifListAllocSize;i++)
+        if (hia->notifList[i].hwnd==NULLHANDLE)
+            {
+            hia->notifList[i].hwnd = (HWND)mp1;
+            hia->notifList[i].id = SHORT1FROMMP(mp2);
+            return MRFROMLONG(TRUE);
+            }
+    return MRFROMLONG(FALSE);
 }
 
 MRESULT hia_usermUnregisterNotify(HWND hwnd,MPARAM mp1,MPARAM mp2)
@@ -581,31 +581,31 @@ MRESULT hia_usermUnregisterNotify(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 int i;
 
-	if (mp1==NULL) return MRFROMLONG(FALSE);
+    if (mp1==NULL) return MRFROMLONG(FALSE);
 
-	for (i=0;i<hia->notifListAllocSize;i++)
-		if (hia->notifList[i].hwnd==(HWND)mp1)
-			{
-			hia->notifList[i].hwnd = NULLHANDLE;
-			hia->notifList[i].id = 0;
-			return MRFROMLONG(TRUE);
-			}
-	return MRFROMLONG(FALSE);
+    for (i=0;i<hia->notifListAllocSize;i++)
+        if (hia->notifList[i].hwnd==(HWND)mp1)
+            {
+            hia->notifList[i].hwnd = NULLHANDLE;
+            hia->notifList[i].id = 0;
+            return MRFROMLONG(TRUE);
+            }
+    return MRFROMLONG(FALSE);
 }
 
 void HIA_NotifyToList(HIA* hia,USHORT notifCode,MPARAM mp2)
 {
 int i;
 
-	for (i=0;i<hia->notifListAllocSize;i++)
-		if (hia->notifList[i].hwnd != NULLHANDLE)
-			WinPostMsg(hia->notifList[i].hwnd,WM_CONTROL,
-				MPFROM2SHORT(hia->notifList[i].id,notifCode),mp2);
+    for (i=0;i<hia->notifListAllocSize;i++)
+        if (hia->notifList[i].hwnd != NULLHANDLE)
+            WinPostMsg(hia->notifList[i].hwnd,WM_CONTROL,
+                MPFROM2SHORT(hia->notifList[i].id,notifCode),mp2);
 }
 
 void HIA_NotifyToConnected(HIA *hia,USHORT notifCode,MPARAM mp2)
 {
-	WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
-		MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
+    WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
+        MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
 }
 
