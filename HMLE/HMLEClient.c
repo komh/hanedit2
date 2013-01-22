@@ -49,6 +49,10 @@ MRESULT APIENTRY HMLEClientWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case WM_TIMER:              return hmlec_wmTimer(hwnd,mp1,mp2);
     case WM_QUERYCONVERTPOS:    return MRFROMSHORT( QCP_NOCONVERT );
 
+    case WM_VSCROLL:            WinPostMsg( WinQueryWindow( hwnd, QW_PARENT ), msg, mp1,mp2); return 0L;
+
+    case WM_HSCROLL:            WinPostMsg( WinQueryWindow( hwnd, QW_PARENT ), msg, mp1,mp2); return 0L;
+
     case DM_DRAGOVER:           return hmlec_dmDragOver(hwnd,mp1,mp2);
     case DM_DROP:               return hmlec_dmDrop(hwnd,mp1,mp2);
 
