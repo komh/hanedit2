@@ -40,4 +40,5 @@ BYTE* houtGetHanjaFont(void);
 }
 #endif
 
-#endif _HOUT_H_
+#endif //_HOUT_H_
+
