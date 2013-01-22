@@ -68,6 +68,8 @@ typedef struct tagHMLE {
     BOOL readonly;
     BOOL connectedToHIA;
 
+    BOOL runningHIA;
+
     int xSize,ySize;
     int beginLineN;
     int beginColN;

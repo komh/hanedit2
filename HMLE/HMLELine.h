@@ -3,10 +3,11 @@
 
 typedef struct tagHMLELine HMLELine;
 struct tagHMLELine {
-	UCHAR*		str;
-	ULONG		allocsize;
-	HMLELine*	prevLine;
-	HMLELine*	nextLine;
+    UCHAR*      str;
+    ULONG       allocsize;
+    BOOL        wordWrapped;
+    HMLELine*   prevLine;
+    HMLELine*   nextLine;
 };
 
 HMLELine* HMLECreateLine(char* str);
@@ -23,12 +24,14 @@ int HMLELineQueryLineNumber(HMLELine* this);
 int HMLELineFindFirstCharFromStx(HMLELine *this,char c,int stx);
 HMLELine* HMLELineSplit(HMLELine *this,int stx);
 int HMLELineCombineWithNextLine(HMLELine *this);
+int HMLELineWordWrap( HMLELine *this, int size, int tabSize );
+int HMLELineQueryWordWrapInfo( HMLELine *this, int size, int tabSize, int *stx );
 int HMLELineInsertPSLF(HMLELine *this,int stx,PSLF str);
 int HMLELineInsertPSLF_limit(HMLELine *this,int stx,PSLF str,int limit);
 int HMLELineInsertHch(HMLELine *this,int stx,HANCHAR hch);
 HANCHAR HMLELineDeleteHch(HMLELine *this,int stx);
-int HMLELineDeleteFrom(HMLELine *this,int stx);	// in-bound
-int HMLELineDeleteTo(HMLELine *this,int stx);	// ex-bound
+int HMLELineDeleteFrom(HMLELine *this,int stx); // in-bound
+int HMLELineDeleteTo(HMLELine *this,int stx);   // ex-bound
 int HMLELineDeleteFromTo(HMLELine *this,int fromStx,int toStx);
 int HMLELineNextWord(HMLELine* this,int stx,const char* separators);
 int HMLELinePrevWord(HMLELine* this,int stx,const char* separators);

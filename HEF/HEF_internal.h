@@ -57,7 +57,8 @@ typedef struct tagHEF {
     BOOL changed;
     BOOL readonly;
     BOOL unreadable;
-    BOOL skipFocusNotify;
+
+    BOOL runningHIA;
 
     int xSize;
     char *outputBuf;

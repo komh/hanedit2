@@ -44,11 +44,19 @@ static MRESULT hia_usermSetInsertMode(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hia_usermQueryWorkingHch(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hia_usermQueryState(HWND hwnd,MPARAM mp1,MPARAM mp2);
 
+static MRESULT hia_usermQueryHanjaKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 );
+static MRESULT hia_usermSetHanjaKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 );
+static MRESULT hia_usermQuerySpecialCharKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 );
+static MRESULT hia_usermSetSpecialCharKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 );
+
 static void HIA_NotifyToList(HIA* hia,USHORT notifCode,MPARAM mp2);
 static void HIA_NotifyToConnected(HIA* hia,USHORT notifCode,MPARAM mp2);
 
 static USHORT hia_convertkey (ULONG kbdtype,USHORT key);
 static ULONG hia_iskeypadkey(UCHAR ucScancode);
+
+static BOOL hia_defaultHanjaKey( USHORT fsFlags, UCHAR ucScancode, USHORT usVk, USHORT usCh );
+static BOOL hia_defaultSpecialCharKey( USHORT fsFlags, UCHAR ucScancode, USHORT usVk, USHORT usCh );
 
 static unsigned char kbdtable[3][96] = {
 { // kbdtype 2
@@ -105,9 +113,34 @@ ULONG hia_iskeypadkey(UCHAR ucScancode)
     return FALSE;
 }
 
+BOOL hia_defaultHanjaKey( USHORT fsFlags, UCHAR ucScancode, USHORT usVk, USHORT usCh )
+{
+    if( fsFlags & KC_KEYUP )
+        return FALSE;
+
+    if(( fsFlags & KC_VIRTUALKEY ) && ( usVk == VK_F9 ) && FKC_NONE( fsFlags ))
+        return TRUE;
+
+    return FALSE;
+}
+
+BOOL hia_defaultSpecialCharKey( USHORT fsFlags, UCHAR ucScancode, USHORT usVk, USHORT usCh )
+{
+    if( fsFlags & KC_KEYUP )
+        return FALSE;
+
+    if(( fsFlags & KC_VIRTUALKEY ) && ( usVk == VK_F4 ) && FKC_NONE( fsFlags ))
+        return TRUE;
+
+    return FALSE;
+}
+
 BOOL RegisterHanAutomataClass(HAB hab)
 {
-    return WinRegisterClass(hab,WCOBJ_HIA,HIA_WndProc,0,HIA_cbWINDOWDATA);
+    if( !WinRegisterClass(hab,WCOBJ_HIA,HIA_WndProc,0,HIA_cbWINDOWDATA))
+        return FALSE;
+
+    return RegisterHanCharListBoxControl( hab );
 }
 
 HWND HIACreateHanAutomata(HWND hwndOwner,ULONG uId)
@@ -138,6 +171,12 @@ MRESULT APIENTRY HIA_WndProc(HWND hwnd,ULONG msg,MPARAM mp1,MPARAM mp2)
    case HIAM_SETINSERTMODE:     return hia_usermSetInsertMode(hwnd,mp1,mp2);
    case HIAM_QUERYWORKINGHCH:   return hia_usermQueryWorkingHch(hwnd,mp1,mp2);
    case HIAM_QUERYSTATE:        return hia_usermQueryState(hwnd,mp1,mp2);
+
+   case HIAM_QUERYHANJAKEYCHECKPROC:        return hia_usermQueryHanjaKeyCheckProc( hwnd, mp1, mp2 );
+   case HIAM_SETHANJAKEYCHECKPROC:          return hia_usermSetHanjaKeyCheckProc( hwnd, mp1, mp2 );
+   case HIAM_QUERYSPECIALCHARKEYCHECKPROC:  return hia_usermQuerySpecialCharKeyCheckProc( hwnd, mp1, mp2 );
+   case HIAM_SETSPECIALCHARKEYCHECKPROC:    return hia_usermSetSpecialCharKeyCheckProc( hwnd, mp1, mp2 );
+
    default:                     return WinDefWindowProc(hwnd,msg,mp1,mp2);
    }
 }
@@ -183,6 +222,9 @@ int i;
     hia->insertmode = HAN_INSERT;
     hia->hcode = HCH_JSY;
 
+    hia->isHanjaKey = hia_defaultHanjaKey;
+    hia->isSpecialCharKey = hia_defaultSpecialCharKey;
+
     hia->notifListAllocSize = notifListAllocSize;
     hia->notifList = notifList;
     hia->notifList[0].hwnd = hwndOwner;
@@ -220,6 +262,53 @@ USHORT ckey;
 //  printf("HIA:: WM_CHAR\n");
 
     if (fsFlags & KC_KEYUP) return 0L;
+
+    if( hia->isHanjaKey != NULL )
+    {
+        if( hia->isHanjaKey( fsFlags, ucScancode, ucVkey, ucChar ))
+        {
+            if( hia->inbuf->newpos != HIABUF_NONE )
+            {
+                HANCHAR hch = SHORT1FROMMR( WinSendMsg( hwnd, HIAM_QUERYWORKINGHCH, 0, 0 ));
+                HANCHAR hj;
+
+                hj = hjselDlg( HWND_DESKTOP, hia->responseTo->hwnd, NULLHANDLE, hch );
+                if( hj != HCH_SINGLE_SPACE )
+                    hch = hj;
+
+                WinSendMsg( hwnd, HIAM_CANCELBUF, 0, 0 );
+                HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(hch));
+                HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(hch));
+
+                //WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+                //HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, MPFROMLONG( TRUE ));
+            }
+            else
+                HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, 0);
+
+            return MRFROMLONG( TRUE );
+        }
+    }
+
+    if( hia->isSpecialCharKey != NULL )
+    {
+        if( hia->isSpecialCharKey( fsFlags, ucScancode, ucVkey, ucChar ))
+        {
+            SCSELINFO scselInfo = { -1, -1, -1 };
+
+            WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+
+            scselDlg( HWND_DESKTOP, hia->responseTo->hwnd, NULLHANDLE, &scselInfo );
+            if( scselInfo.hch != HCH_SINGLE_SPACE )
+            {
+                HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(scselInfo.hch));
+                HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(scselInfo.hch));
+            }
+
+            return MRFROMLONG( TRUE );
+        }
+    }
+
     if (fsFlags & KC_VIRTUALKEY)
         {
         switch (ucVkey) {
@@ -282,6 +371,7 @@ USHORT ckey;
                 return MRFROMLONG(FALSE);
                 }
             break;
+
         case VK_INSERT:
             if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;   // considering keypad
             if (hia->inbuf->newpos != HIABUF_NONE)
@@ -295,59 +385,25 @@ USHORT ckey;
                 }
             break;
 
-        case VK_F4 :
-            if( FKC_NONE( fsFlags ))
-            {
-                SCSELINFO scselInfo = { -1, -1, -1 };
+        case VK_ESC :
+            WinSendMsg(hwnd,HIAM_CANCELBUF,0L,0L);
 
-                WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+            return FALSE;
 
-                scselDlg( HWND_DESKTOP, hwnd, NULLHANDLE, &scselInfo );
-                if( scselInfo.hch != HCH_SINGLE_SPACE )
-                {
-                    HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(scselInfo.hch));
-                    HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(scselInfo.hch));
-                }
-
-                return MRFROMLONG( TRUE );
-            }
-            return MRFROMLONG( FALSE );
-
-        case VK_F9 :
-            if( FKC_NONE( fsFlags ))
-            {
-                if( hia->inbuf->newpos != HIABUF_NONE )
-                {
-                    HANCHAR hch = SHORT1FROMMR( WinSendMsg( hwnd, HIAM_QUERYWORKINGHCH, 0, 0 ));
-                    HANCHAR hj;
-
-                    WinEnableWindowUpdate( hia->responseTo->hwnd, FALSE );
-                    WinSendMsg( hwnd, HIAM_CANCELBUF, 0, 0 );
-
-                    hj = hjselDlg( HWND_DESKTOP, hwnd, NULLHANDLE, hch );
-                    if( hj != HCH_SINGLE_SPACE )
-                        hch = hj;
-
-                    HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(hch));
-                    HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(hch));
-
-                    WinEnableWindowUpdate( hia->responseTo->hwnd, TRUE );
-
-                    //WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
-                    //HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, MPFROMLONG( TRUE ));
-                }
-                else
-                    HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, 0);
-
-                return MRFROMLONG( TRUE );
-            }
-            return MRFROMLONG( FALSE );
+        case VK_SHIFT :
+            return FALSE;
         }   // switch
+
+        WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+
+        return FALSE;
         } // Virtualkey
 
-    if ((fsFlags & KC_CTRL) || (fsFlags & KC_ALT)) return FALSE;
-    if ((ucChar < 32) || (ucChar > 127))
-        return FALSE;   // not consumed
+    if(( fsFlags & ( KC_CTRL | KC_ALT )) || (ucChar < 32) || (ucChar > 127))
+    {
+        WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+        return FALSE;
+    }
 
     if (hia->hanmode == HCH_ENG)
         {
@@ -644,6 +700,38 @@ int i;
     return MRFROMLONG(FALSE);
 }
 
+MRESULT hia_usermQueryHanjaKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+
+    return MRFROMP( hia->isHanjaKey );
+}
+
+MRESULT hia_usermSetHanjaKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+
+    hia->isHanjaKey = ( PFNCKP )mp1;
+
+    return 0;
+}
+
+MRESULT hia_usermQuerySpecialCharKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+
+    return MRFROMP( hia->isSpecialCharKey );
+}
+
+MRESULT hia_usermSetSpecialCharKeyCheckProc( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+HIA *hia = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+
+    hia->isSpecialCharKey = ( PFNCKP )mp1;
+
+    return 0;
+}
+
 void HIA_NotifyToList(HIA* hia,USHORT notifCode,MPARAM mp2)
 {
 int i;
@@ -656,7 +744,16 @@ int i;
 
 void HIA_NotifyToConnected(HIA *hia,USHORT notifCode,MPARAM mp2)
 {
+#ifndef __KIME__
     WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
         MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
+#else
+    if(( notifCode == HIAN_INSERTHCH ) || ( notifCode == HIAN_COMPO_COMPLETE ))
+        WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
+            MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
+    else
+        WinPostMsg(hia->responseTo->hwnd,WM_CONTROL,
+            MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
+#endif
 }
 

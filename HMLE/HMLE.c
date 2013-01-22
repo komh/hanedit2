@@ -69,6 +69,9 @@ static MRESULT hmle_usermQueryTabstop(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_usermRefresh(HWND,MPARAM,MPARAM);
 static MRESULT hmle_usermRefreshScrollbar(HWND,MPARAM,MPARAM);
 
+static MRESULT hmle_usermSetWrap( HWND, MPARAM, MPARAM );
+static MRESULT hmle_usermQueryWrap( HWND, MPARAM, MPARAM );
+
 static MRESULT hmle_usermDump(HWND,MPARAM,MPARAM);
 
 // Register the class.
@@ -147,6 +150,9 @@ MRESULT APIENTRY HMLEWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case HMLM_PASTE:                return hmle_usermPaste(hwnd,mp1,mp2);
     case HMLM_CLEAR:                return hmle_usermClear(hwnd,mp1,mp2);
 
+    case HMLM_SETWRAP:              return hmle_usermSetWrap( hwnd, mp1, mp2 );
+    case HMLM_QUERYWRAP:            return hmle_usermQueryWrap( hwnd, mp1, mp2 );
+
     case HMLM_DUMP:                 return hmle_usermDump(hwnd,mp1,mp2);
 
     case WM_CALCFRAMERECT:          return hmle_wmCalcFrameRect(hwnd,mp1,mp2);
@@ -178,6 +184,7 @@ HMLE* hmle = NULL;
         pCtlData->eol_type  = pHMLECD->eol_type;
         pCtlData->autoIndent = pHMLECD->autoIndent;
         pCtlData->maxLineSize = pHMLECD->maxLineSize;
+        pCtlData->wordWrapSize = pHMLECD->wordWrapSize;
         if (WinIsWindow(WinQueryAnchorBlock(hwnd),pHMLECD->hwndHIA))
             pCtlData->hwndHIA = pHMLECD->hwndHIA;
             else
@@ -188,6 +195,7 @@ HMLE* hmle = NULL;
         pCtlData->eol_type  = HMLE_EOL_CRLF;
         pCtlData->autoIndent = TRUE;
         pCtlData->maxLineSize = HMLE_DEFAULT_MAXLINESIZE;
+        pCtlData->wordWrapSize = 0;
         pCtlData->hwndHIA   = NULLHANDLE;
         }
 
@@ -249,6 +257,10 @@ HMLE* hmle = NULL;
     hmle->doc->tabsize = 8;
     hmle->beginLineN = 0;
     hmle->beginColN = 0;
+
+    hmle->doc->wordWrap = pCreate->flStyle & HMLS_WORDWRAP;
+    hmle->doc->wordWrapSizeAuto = pCtlData->wordWrapSize == 0;
+    hmle->doc->wordWrapSize = pCtlData->wordWrapSize;
 
     WinSetWindowPtr(hwnd,WINWORD_INSTANCE,hmle);
 
@@ -455,7 +467,14 @@ ULONG flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
     assert(hps!=NULLHANDLE);
 #endif
 
-    WinFillRect( hps, &rectlUpdate, SYSCLR_BUTTONMIDDLE );
+    if(( flStyle & ( HMLS_HSCROLL | HMLS_VSCROLL )) == ( HMLS_HSCROLL | HMLS_VSCROLL ))
+    {
+        WinQueryWindowRect(hwnd,&rectlUpdate);
+
+        rectlUpdate.xLeft = rectlUpdate.xRight - WinQuerySysValue(HWND_DESKTOP,SV_CXVSCROLL) + 1;
+        rectlUpdate.yTop = rectlUpdate.yBottom + WinQuerySysValue(HWND_DESKTOP,SV_CYHSCROLL) - 1;
+        WinFillRect( hps, &rectlUpdate, SYSCLR_BUTTONMIDDLE );
+    }
 
     if (flStyle&HMLS_BORDER)
         {
@@ -579,6 +598,11 @@ HMLEDoc *newdoc;
 #endif
 
     if (newdoc==NULL) return MRFROMLONG(-1);
+
+    newdoc->wordWrap = hmle->doc->wordWrap;
+    newdoc->wordWrapSizeAuto = hmle->doc->wordWrapSizeAuto;
+    newdoc->wordWrapSize = hmle->doc->wordWrapSize;
+
     HMLEDestroyDoc(hmle->doc);
 
     hmle->doc = newdoc;
@@ -592,10 +616,14 @@ HMLEDoc *newdoc;
 MRESULT hmle_usermRefresh(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+HMLEIpt curIpt;
 
     HMLERepositionPage( hmle );
     WinPostMsg(hwnd,HMLM_REFRESHSCROLLBAR,0L,0L);
     WinPostMsg(hmle->hwndClient,HMLMC_REFRESHCURSOR,0,0);
+    HMLEDocQueryCurIpt(hmle->doc, &curIpt);
+    HMLEStatNotify(hmle,HMLN_NOTIFYCURSORPOS,
+                   MPFROM2SHORT(curIpt.ln, HMLEDocColFromStx(hmle->doc,curIpt.stx)));
     WinInvalidateRect(hwnd,NULL,TRUE);
 
     return 0L;
@@ -1348,6 +1376,39 @@ MRESULT hmle_usermQueryTabstop(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
     return MRFROMLONG(hmle->doc->tabsize);
+}
+
+static MRESULT hmle_usermSetWrap( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+    HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+    BOOL wordWrap = ( BOOL )mp1;
+    int  wordWrapSize = ( BOOL )mp2;
+
+    hmle->doc->wordWrap = wordWrap;
+    hmle->doc->wordWrapSizeAuto = FALSE;
+    hmle->doc->wordWrapSize = wordWrapSize;
+    if( wordWrapSize == 0 )
+    {
+        hmle->doc->wordWrapSizeAuto = TRUE;
+        hmle->doc->wordWrapSize = hmle->xSize - 2;
+    }
+
+    HMLEDocWordWrap( hmle->doc, NULL );
+    WinPostMsg( hwnd, HMLM_REFRESH, 0, 0 );
+
+    return MRFROMLONG( TRUE );
+}
+
+static MRESULT hmle_usermQueryWrap( HWND hwnd, MPARAM mp1, MPARAM mp2 )
+{
+    HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+    BOOL wordWrap = hmle->doc->wordWrap;
+    int  wordWrapSize = hmle->doc->wordWrapSize;
+
+    if( hmle->doc->wordWrapSizeAuto )
+        wordWrapSize = 0;
+
+    return MRFROM2SHORT( wordWrap, wordWrapSize );
 }
 
 /*

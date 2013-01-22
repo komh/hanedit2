@@ -15,7 +15,7 @@ struct tagHMLEDoc {
     HMLELine*   endLine;
     HMLELine*   curLine;
     ULONG       curStx;
-    ULONG       savedStx;
+    ULONG       savedCol;
     HMLELine*   anchorLine;
     ULONG       anchorStx;
     ULONG       markingState;
@@ -27,6 +27,9 @@ struct tagHMLEDoc {
 //  ULONG       readonly;
 //  ULONG       textformat;
 //  ULONG       TGtype;
+    BOOL        wordWrap;
+    BOOL        wordWrapSizeAuto;
+    int         wordWrapSize;
     int         errno;
 };
 
@@ -96,5 +99,7 @@ void HMLEDocCheckPacking(HMLEDoc *this);
 int HMLEDocReport(HMLEDoc* this,FILE *stream);
 void HMLEDocDump(HMLEDoc *this,FILE *stream,int options);
 int HMLEDocColFromStx(HMLEDoc *this, int stx);
+
+int HMLEDocWordWrap( HMLEDoc *this, HMLELine *line );
 
 #endif // __HMLEDOC_H__

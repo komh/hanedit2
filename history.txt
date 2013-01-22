@@ -1,3 +1,15 @@
+ver 0.051: (2002-01-10)
+  new:
+    .알아서 줄바꾸기(Word Wrap)
+    .한자 및 특수 문자 입력 메뉴 추가
+    
+  bugfix:
+    .-readonly 옵션이 있을 경우, 파일을 읽지 않음
+    
+  know bugs/limitation:
+    .알아서 줄바꿈된 문장을 Copy/Cut/Paste 할 경우 줄바꿈 기능이 
+     유지되지 않음
+    
 ver 0.050: (2001-01-28)
   new:
     .가로 스크롤바

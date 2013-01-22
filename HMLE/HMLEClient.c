@@ -47,7 +47,7 @@ MRESULT APIENTRY HMLEClientWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case WM_BUTTON1MOTIONSTART: return hmlec_wmButton1MotionStart(hwnd,mp1,mp2);
     case WM_BUTTON1MOTIONEND:   return hmlec_wmButton1MotionEnd(hwnd,mp1,mp2);
     case WM_TIMER:              return hmlec_wmTimer(hwnd,mp1,mp2);
-    case WM_QUERYCONVERTPOS:        return MRFROMSHORT( QCP_NOCONVERT );
+    case WM_QUERYCONVERTPOS:    return MRFROMSHORT( QCP_NOCONVERT );
 
     case DM_DRAGOVER:           return hmlec_dmDragOver(hwnd,mp1,mp2);
     case DM_DROP:               return hmlec_dmDrop(hwnd,mp1,mp2);
@@ -61,8 +61,13 @@ MRESULT hmlec_wmCreate( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 PCREATESTRUCT pCreate = (PCREATESTRUCT) mp2;
 HMLE *hmle = (HMLE*)mp1;
 
+    hmle->runningHIA = FALSE;
     hmle->xSize = (pCreate->cx+7)/8;
     hmle->ySize = (pCreate->cy+15)/16;
+
+    if( hmle->doc->wordWrapSizeAuto )
+        hmle->doc->wordWrapSize = hmle->xSize - 2;
+
     if (hmle->hwndHIA==NULLHANDLE)
         {
         if (!(pCreate->flStyle & HMLS_NOAUTOCREATEHIA))
@@ -89,6 +94,9 @@ MRESULT hmlec_wmSetFocus(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
+    if( hmle->runningHIA )
+        return 0;
+
     if (SHORT1FROMMP(mp2))
         {
         HMLEWNDC_Notify(hwnd,HMLN_SETFOCUS,0);
@@ -104,7 +112,6 @@ HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
         WinPostMsg(hmle->hwndClient,HMLMC_REFRESHCURSOR,0,0);
         WinInvalidateRect(hwnd,NULL,TRUE);
         } else {
-
         if (hmle->doc->hchComposing!=0)
             if ((hmle->hwndHIA!=NULLHANDLE) && (hmle->connectedToHIA))
                 WinSendMsg(hmle->hwndHIA,HIAM_COMPLETEHCH,0,0);
@@ -131,7 +138,9 @@ USHORT ncx,ncy;
     hmle->xSize = (ncx+7)/8;
     hmle->ySize = (ncy+15)/16;
 
-    printf("wmSize\n");
+    if( hmle->doc->wordWrapSizeAuto )
+       hmle->doc->wordWrapSize = hmle->xSize - 2;
+
     WinPostMsg(hmle->hwndHMLE,HMLM_REFRESH,0L,0L);
 
     return MRFROMLONG(0L);
@@ -291,8 +300,7 @@ ULONG       shape = 0,xsize = 0;
 
     if (hwndHIA==NULLHANDLE) return MRFROMLONG(-1);
 
-
-    if (WinQueryFocus(HWND_DESKTOP) == hwnd)
+    if(WinQueryFocus(HWND_DESKTOP) == hwnd )
         {
         ULONG flHIA = (ULONG)WinSendMsg(hwndHIA,HIAM_QUERYSTATE,0L,0L);
         WinQueryWindowRect( hwnd, &rectlClip );
@@ -335,7 +343,7 @@ ULONG       shape = 0,xsize = 0;
 
         WinShowCursor(hwnd,TRUE);
 
-        } else if (mp1) WinSetFocus(HWND_DESKTOP,hwnd);
+        } else if ( mp1 ) WinSetFocus(HWND_DESKTOP,hwnd);
 
     return MRFROMLONG(0L);
 }
@@ -540,7 +548,11 @@ BOOL    consumed = FALSE;
         return WinDefWindowProc(hwnd,WM_CHAR,mp1,mp2);
 
     if (!(hmle->readonly))
+    {
+        hmle->runningHIA = TRUE;
         consumed = (BOOL)WinSendMsg(hmle->hwndHIA,WM_CHAR,mp1,mp2);
+        hmle->runningHIA = FALSE;
+    }
 
     HMLEDocQueryCurIpt(hmle->doc,&oldIpt);
 
@@ -942,8 +954,10 @@ ULONG   flHIAState;
             break;
         case HIAN_CONNECT:
             hmle->connectedToHIA = (int)mp2;
+            #ifdef DEBUG
             printf("HIAN_CONNECT:");
             if (hmle->connectedToHIA) printf("TRUE\n"); else printf("FALSE\n");
+            #endif
             break;
 
         case HIAN_HGHJCONVERT:
@@ -1145,7 +1159,15 @@ RECTL rectlUpdate;
     WinQueryWindowRect(hmle->hwndClient,&rectlUpdate);
 
     rectlUpdate.yTop -= (HMLEQueryRelY(hmle)<<4);
-    rectlUpdate.yBottom = rectlUpdate.yTop - 16;
+
+    if( hmle->doc->wordWrap )
+    {
+        if(( hmle->doc->curLine->prevLine != NULL ) &&
+           ( hmle->doc->curLine->prevLine->wordWrapped ))
+        rectlUpdate.yTop += 16;
+    }
+    else
+        rectlUpdate.yBottom = rectlUpdate.yTop - 16;
 
     WinInvalidateRect(hmle->hwndClient,&rectlUpdate,FALSE);
 }

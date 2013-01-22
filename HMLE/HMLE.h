@@ -60,6 +60,10 @@ extern "C" {
 #define HMLM_SETHIA                 (WM_USER+53)
 
 #define HMLM_SEARCH                 (WM_USER+60)    // incomplete
+
+#define HMLM_SETWRAP                (WM_USER+70)
+#define HMLM_QUERYWRAP              (WM_USER+71)
+
 #define HMLM_DUMP                   (WM_USER+100)
 
 #define HMLE_EOL_CRLF       0
@@ -123,12 +127,13 @@ extern "C" {
 // --------------------------------------------------------------------------
 
 typedef struct tagHMLECTLDATA {
-    USHORT cb;
-    ULONG eol_type;
-    ULONG han_type;
-    BOOL  autoIndent;
-    ULONG maxLineSize;
-    HWND hwndHIA;
+    USHORT  cb;
+    ULONG   eol_type;
+    ULONG   han_type;
+    BOOL    autoIndent;
+    ULONG   maxLineSize;
+    int     wordWrapSize;
+    HWND    hwndHIA;
 } HMLECTLDATA, *PHMLECTLDATA;
 
 typedef struct tagHMLEFILEDROPNOTIF {

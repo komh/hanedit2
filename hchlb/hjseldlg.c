@@ -14,9 +14,14 @@ static MRESULT hjselDlg_wmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 );
 
 HANCHAR hjselDlg( HWND hwndParent, HWND hwndOwner, HMODULE hmod, HANCHAR hch )
 {
+    HWND    hwndDlg;
     LONG    rc;
 
-    rc = WinDlgBox( HWND_DESKTOP, hwndOwner, &hjselDlgProc, hmod, IDD_HANJASEL, &hch );
+    //rc = WinDlgBox( hwndParent, hwndOwner, &hjselDlgProc, hmod, IDD_HANJASEL, &hch );
+    hwndDlg = WinLoadDlg( hwndParent, hwndOwner, &hjselDlgProc, hmod, IDD_HANJASEL, &hch );
+    rc = WinProcessDlg( hwndDlg );
+    WinDestroyWindow( hwndDlg );
+
     if( rc == DID_CANCEL )
         hch = HCH_SINGLE_SPACE;
 

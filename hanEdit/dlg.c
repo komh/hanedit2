@@ -16,12 +16,9 @@ static int dlgFind_found = FALSE;
 
 MRESULT EXPENTRY HEFindDlgProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2 )
 {
-    static BOOL tabPressed = FALSE;
-
     switch (msg)
     {
     case WM_INITDLG:
-        tabPressed = TRUE;
         dlgFind_wmInitDlg(hwnd);
         break;
 /*

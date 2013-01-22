@@ -2,6 +2,12 @@
 CC = gcc
 CFLAGS = -O3 -Wall -Wno-parentheses -Wno-format -DDEBUG -g
 CFLAGS2 = -Zomf -Zsys -s -O3 -Wall -Wno-parentheses -Wno-format
+
+ifdef KIME
+CFLAGS := $(CFLAGS) -D__KIME__
+CFLAGS2 := $(CFLAGS2) -D__KIME__
+endif
+
 RM = rm
 CP = cp
 

@@ -13,8 +13,8 @@ static PSCSELINFO pscselInfo = NULL;
 static SCSELINFO  scselInfo = { 0, 0, 0 };
 
 static PSZ apszCategory[ CATEGORY_NUMBER ] =
-    { "도형문자 ", "전각영문,한글낱자(1)", "로마숫자,괘선조각 ",
-      "단위기호,라틴(1)", "라틴(2),일본(1)", "일본(2),러시아 ",
+    { "도형문자", "전각영문,한글낱자(1)", "로마숫자,괘선조각",
+      "단위기호,라틴(1)", "라틴(2),일본(1)", "일본(2),러시아",
       "한글낱자(2)" };
 static LBOXINFO lbInfo = { LIT_END, CATEGORY_NUMBER, 0, 0 };
 
@@ -26,9 +26,14 @@ static MRESULT scselDlg_wmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 );
 
 HANCHAR scselDlg( HWND hwndParent, HWND hwndOwner, HMODULE hmod, PSCSELINFO pscselInfo )
 {
+    HWND    hwndDlg;
     LONG    rc;
 
-    rc = WinDlgBox( HWND_DESKTOP, hwndOwner, &scselDlgProc, hmod, IDD_SPECIALCHARSEL, pscselInfo );
+    //rc = WinDlgBox( hwndParent, hwndOwner, &scselDlgProc, hmod, IDD_SPECIALCHARSEL, pscselInfo );
+    hwndDlg = WinLoadDlg( hwndParent, hwndOwner, &scselDlgProc, hmod, IDD_SPECIALCHARSEL, pscselInfo );
+    rc = WinProcessDlg( hwndDlg );
+    WinDestroyWindow( hwndDlg );
+
     if( rc == DID_CANCEL )
         pscselInfo->hch = HCH_SINGLE_SPACE;
 
@@ -175,7 +180,7 @@ MRESULT scselDlg_wmDrawItem( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     if( str == NULL )
         return MRFROMLONG( FALSE );
 
-    WinQueryLboxItemText( poi->hwnd, poi->idItem, str, maxLen );
+    WinQueryLboxItemText( poi->hwnd, poi->idItem, str, maxLen + 1 );
     hch_ks2systr( str );
 
     fgColor = GpiQueryColor( poi->hps );

@@ -86,7 +86,7 @@ HEF* hef = mp1;
     hef->selection = FALSE;
     hef->beginCol = 0;
     hef->changed = FALSE;
-    hef->skipFocusNotify = FALSE;
+    hef->runningHIA = FALSE;
     hef->xSize = (pCreate->cx+7)/8;
     hef->outputBuf = malloc(hef->allocsize + hef->xSize);
 #ifdef DEBUG
@@ -145,10 +145,12 @@ MRESULT hefc_wmSetFocus(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HEF *hef = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 
+    if( hef->runningHIA )
+        return 0;
+
     if (SHORT1FROMMP(mp2))
         {
-        if( !hef->skipFocusNotify )
-            HEFWND_Client_Notify(hwnd,HEN_SETFOCUS,0);
+        HEFWND_Client_Notify(hwnd,HEN_SETFOCUS,0);
         if (hef->hwndHIA!=NULLHANDLE)
             WinSendMsg(hef->hwndHIA,HIAM_CONNECT,MPFROMLONG(hwnd),MPFROMLONG(HEFCID_HIA));
         WinPostMsg(hwnd,HEMC_REFRESH,0,0);
@@ -164,8 +166,7 @@ HEF *hef = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
             WinPostMsg(hwnd,HEMC_REFRESH,0,0);
             }
         WinShowCursor(hwnd,FALSE);
-        if( !hef->skipFocusNotify )
-            HEFWND_Client_Notify(hwnd,HEN_KILLFOCUS,0);
+        HEFWND_Client_Notify(hwnd,HEN_KILLFOCUS,0);
         }
     return 0L;
 }
@@ -350,12 +351,9 @@ BOOL    consumed = FALSE;
         if (!(hef->readonly) &&
             !((fsFlags& KC_VIRTUALKEY)&&(ucVkey==VK_TAB)))
             {
-            if(( fsFlags & KC_VIRTUALKEY ) &&
-               (( ucVkey == VK_F4 ) || ( ucVkey == VK_F9 )))
-                hef->skipFocusNotify = TRUE;
-
+            hef->runningHIA = TRUE;
             consumed = (BOOL)WinSendMsg(hef->hwndHIA,WM_CHAR,mp1,mp2);
-            hef->skipFocusNotify = FALSE;
+            hef->runningHIA = FALSE;
             }
         }
 

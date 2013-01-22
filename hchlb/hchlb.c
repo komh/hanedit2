@@ -422,8 +422,9 @@ MRESULT hchlb_umSelectItem( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     else if( hchlb->curIndex == index )
         hchlb->curIndex = HCHLIT_NONE;
 
-    hchlb->eraseBg = FALSE;
-    WinSendMsg( hwnd, HCHLM_REFRESH, 0, 0 );
+    //hchlb->eraseBg = FALSE;
+    //WinSendMsg( hwnd, HCHLM_REFRESH, 0, 0 );
+    HCHLBRepositionPage( hchlb );
 
     return MRFROMLONG( TRUE );
 }

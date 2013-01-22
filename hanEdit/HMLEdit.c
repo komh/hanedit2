@@ -1,8 +1,3 @@
-#define APPNAME     "HanEdit/2"
-#define VERSION     "0.050"
-#define AUTHOR      "Moon,Yousung / kwisatz@mail.hitel.net"
-#define EXTENDER    "KO Myung-Hun / komh@chollian.net"
-
 #define INCL_PM
 #define INCL_DOSNLS
 #define INCL_DOSPROCESS
@@ -26,11 +21,15 @@
 #define TOOLBAR_YSIZE   20
 #define STATBAR_YSIZE   18
 
+#define MIN_WORDWRAP_SIZE   10
+
 #define DEFAULT_HAN_TYPE                (HMLE_HAN_KS)
 #define DEFAULT_EOL_TYPE                (HMLE_EOL_CRLF)
 #define DEFAULT_KBD_TYPE                (HAN_KBD_2)
 #define DEFAULT_READONLY                (FALSE)
 #define DEFAULT_AUTOINDENT              (TRUE)
+#define DEFAULT_WORDWRAP                (FALSE)
+#define DEFAULT_WORDWRAPSIZE            (0)
 #define DEFAULT_FGCOLOR                 (CLR_WHITE)
 #define DEFAULT_BGCOLOR                 (CLR_DARKBLUE)
 #define DEFAULT_SELFGCOLOR              (CLR_DARKBLUE)
@@ -76,6 +75,8 @@ ULONG HEExit(HWND hwnd);
 ULONG HEAbout(HWND hwnd);
 ULONG HEFind(HWND hwnd);
 ULONG HESelectAll(HWND hwnd);
+ULONG HESpecialChars( HWND hwnd );
+ULONG HEHanja( HWND hwnd );
 ULONG HEReloadAfterChangeHanCode(HWND hwnd);
 
 void EnableReloadButton(HWND hwnd);
@@ -122,6 +123,8 @@ static int ySize = DEFAULT_YSIZE;
 
 static BOOL autoIndent = DEFAULT_AUTOINDENT;
 static BOOL markingState = FALSE;
+static BOOL wordWrap = DEFAULT_WORDWRAP;
+static int  wordWrapSize = DEFAULT_WORDWRAPSIZE;
 
 static char szFullPath[CCHMAXPATH];
 static char szDir[CCHMAXPATH];
@@ -272,6 +275,11 @@ char hanjafontpath[256];
             autoIndent = TRUE;
         else if( strcmp( str, "-no-autoindent") == 0 )
             autoIndent = FALSE;
+        else if( strcmp( str, "-wordwrap" ) == 0 )
+        {
+            wordWrap = TRUE;
+            wordWrapSize = atoi( argv[ ++idx ]);
+        }
         else {
         bootopen = argv[idx];
         }
@@ -333,7 +341,7 @@ QMSG  qmsg;
 HWND  hwndFrame = NULLHANDLE;
 HWND  hwndClient = NULLHANDLE;
 ULONG ctlData = FCF_TITLEBAR | FCF_SYSMENU | FCF_SIZEBORDER | FCF_MINMAX |
-        FCF_TASKLIST | FCF_MENU | FCF_NOBYTEALIGN;
+        FCF_TASKLIST | FCF_MENU | FCF_ACCELTABLE | FCF_NOBYTEALIGN;
 RECTL rectl;
 
     do  {
@@ -410,7 +418,7 @@ MRESULT APIENTRY ClientWndProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case WM_COMMAND:            return mainwmCommand(hwnd,mp1,mp2);
     case WM_CONTROL:            return mainwmControl(hwnd, mp1, mp2);
     case WM_CREATE:             return mainwmCreate(hwnd, mp1, mp2);
-//  case WM_SETFOCUS:           return mainwmSetFocus(hwnd,mp1,mp2);
+//    case WM_SETFOCUS:           return mainwmSetFocus(hwnd,mp1,mp2);
     case WM_SIZE:               return mainwmSize(hwnd, mp1, mp2);
     case WM_CLOSE:              return mainwmClose(hwnd,mp1,mp2);
     case WM_CHAR:               return mainwmChar(hwnd,mp1,mp2);
@@ -455,8 +463,9 @@ HWND    hwndFrame = WinQueryWindow(hwnd,QW_PARENT);
 
     if (readonly)
         {
+        WinEnableMenuItem(WinWindowFromID(hwndFrame,FID_MENU),IDM_IMPORT,FALSE );
         WinEnableMenuItem(WinWindowFromID(hwndFrame,FID_MENU),IDM_SAVE,FALSE);
-        WinEnableMenuItem(WinWindowFromID(hwndFrame,FID_MENU),IDM_SAVEAS,FALSE);
+        //WinEnableMenuItem(WinWindowFromID(hwndFrame,FID_MENU),IDM_SAVEAS,FALSE);
         WinPostMsg(hwndToolbar,TOOLBAR_USERM_SHOWITEM,MPFROMLONG(TOOLBAR_SAVE),FALSE);
         WinPostMsg(hwndToolbar,TOOLBAR_USERM_SHOWITEM,MPFROMLONG(TOOLBAR_CUT),FALSE);
         WinPostMsg(hwndToolbar,TOOLBAR_USERM_SHOWITEM,MPFROMLONG(TOOLBAR_PASTE),FALSE);
@@ -489,6 +498,9 @@ LONG color;
         flStyle |=HMLS_READONLY;
         }
 
+    if( wordWrap )
+        flStyle |= HMLS_WORDWRAP;
+
     hwndHIA = HIACreateHanAutomata(hwnd,ID_HIA);
 
     hmlecd.cb = sizeof(hmlecd);
@@ -496,6 +508,7 @@ LONG color;
     hmlecd.han_type = han_type;
     hmlecd.autoIndent = autoIndent;
     hmlecd.maxLineSize = maxLineSize;
+    hmlecd.wordWrapSize = wordWrapSize;
     hmlecd.hwndHIA = hwndHIA;
 //  printf("cx = %d\ncy = %d\n",pcreate->cx,pcreate->cy);
 //  printf("maxLineSize = %d\n",maxLineSize);
@@ -693,29 +706,30 @@ MRESULT mainwmSize( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 
 MRESULT mainwmChar(HWND hwnd, MPARAM mp1, MPARAM mp2)
 {
-USHORT  fsFlags = SHORT1FROMMP(mp1);
-UCHAR   ucVkey  = CHAR3FROMMP(mp2);
-UCHAR   ucChar  = CHAR1FROMMP(mp2);
+//USHORT  fsFlags = SHORT1FROMMP(mp1);
+//UCHAR   ucVkey  = CHAR3FROMMP(mp2);
+//UCHAR   ucChar  = CHAR1FROMMP(mp2);
+
 //UCHAR ucScancode = CHAR4FROMMP(mp1);
 //char str[100];
 //  printf("HMLEdit:: WM_CHAR\n");
 
-    ucChar = toupper(ucChar);
-    if (fsFlags & KC_KEYUP) return 0L;
-    if ((ucChar == 'S')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
-        HESave(hwnd);
-    if ((ucChar == 'O')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
-        HEOpen(hwnd);
-    if ((ucChar == 'I')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
-        HEImport(hwnd);
-    if ((ucChar == 'F')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
-        HEFind(hwnd);
-    if ((ucChar == '/')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
-        HESelectAll(hwnd);
-    if ((ucChar == 'X')&&(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
-        HEExit(hwnd);
-    if ((ucVkey == VK_F2)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
-        WinSendMsg( hwnd, WM_COMMAND, MPFROMSHORT( IDM_RELOAD ), 0 );
+//    ucChar = toupper(ucChar);
+    //if (fsFlags & KC_KEYUP) return 0L;
+    //if ((ucChar == 'S')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
+        //HESave(hwnd);
+    //if ((ucChar == 'O')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
+        //HEOpen(hwnd);
+    //if ((ucChar == 'I')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
+        //HEImport(hwnd);
+    //if ((ucChar == 'F')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
+        //HEFind(hwnd);
+    //if ((ucChar == '/')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
+        //HESelectAll(hwnd);
+    //if ((ucChar == 'X')&&(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
+        //HEExit(hwnd);
+    //if ((ucVkey == VK_F2)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
+        //WinSendMsg( hwnd, WM_COMMAND, MPFROMSHORT( IDM_RELOAD ), 0 );
 
     return MRFROMLONG( TRUE );
 }
@@ -745,7 +759,7 @@ MRESULT mainwmClose(HWND hwnd,MPARAM mp1,MPARAM mp2)
     if (WinSendMsg(hwndHMLE,HMLM_QUERYCHANGED,0L,0L))
         {
         if (WinMessageBox(
-                HWND_DESKTOP,hwnd,
+                HWND_DESKTOP, hwnd,
                 "Exit without saving?","Caution",
                 0,MB_OKCANCEL|MB_DEFBUTTON2|MB_WARNING|MB_MOVEABLE)==MBID_CANCEL)
             return 0L;
@@ -833,6 +847,7 @@ MRESULT mainwmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 )
         break;
     case IDM_OPEN:
         HEOpen(hwnd);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
         break;
     case IDM_IMPORT:
         HEImport(hwnd);
@@ -853,12 +868,15 @@ MRESULT mainwmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 )
         break;
     case IDM_SAVE:
         HESave(hwnd);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
         break;
     case IDM_SAVEAS:
         HESaveAs(hwnd);
         break;
     case IDM_EXIT:
         HEExit(hwnd);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
+//        return 0L;
         break;
     case IDM_ABOUT:
         HEAbout(hwnd);
@@ -868,15 +886,18 @@ MRESULT mainwmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 )
         break;
     case IDM_COPY:
         WinSendMsg(hwndHMLE,HMLM_COPY,0,0);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
         break;
     case IDM_CUT:
         WinSendMsg(hwndHMLE,HMLM_CUT,0,0);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
         break;
     case IDM_PASTE:
         WinSendMsg(hwndHMLE,HMLM_PASTE,0,0);
         break;
     case IDM_CLEAR:
         WinSendMsg(hwndHMLE,HMLM_CLEAR,0,0);
+//        WinSetFocus(HWND_DESKTOP,hwndHMLE);
         break;
     case IDM_FIND:
         HEFind(hwnd);
@@ -884,16 +905,25 @@ MRESULT mainwmCommand( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     case IDM_SELECTALL:
         HESelectAll(hwnd);
         break;
+    case IDM_SPECIALCHARS:
+        HESpecialChars( hwnd );
+        break;
+    case IDM_HANJA:
+        HEHanja( hwnd );
+        break;
     } // switch Control
 
-    WinSetFocus(HWND_DESKTOP,hwndHMLE);
+    if( SHORT1FROMMP( mp2 ) == CMDSRC_PUSHBUTTON )
+        WinSetFocus(HWND_DESKTOP,hwndHMLE);
+
+    WinPostMsg( hwndHMLE, HMLM_REFRESH, 0, 0 );
 
     return MRFROMLONG(0L);
 }
 
 ULONG HEExit(HWND hwnd)
 {
-    WinPostMsg(hwnd,WM_CLOSE,0L,0L);
+    WinSendMsg(hwnd,WM_CLOSE,0L,0L);
     return 0L;
 }
 
@@ -926,21 +956,21 @@ ULONG HEReloadAfterChangeHanCode(HWND hwnd)
 ULONG HanType   = (ULONG)  WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
 
     if (*szFullPath=='\0') return 0;
-        if (HanType == HMLE_HAN_SY)
-            {
-            WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
-            WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
-            } else {
-            WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
-            WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
-            }
+
+    if (HanType == HMLE_HAN_SY)
+    {
+        WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
+        WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
+    } else {
+        WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
+        WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
+    }
 
     HEFileOpen(hwnd,szFullPath,FALSE);
     DisableReloadButton(hwnd);
 
     return 0L;
 }
-
 
 ULONG HEOpen(HWND hwnd)
 {
@@ -996,6 +1026,9 @@ char    szTitle[100];
 char    *buf;
 ULONG   size;
 ULONG   hanType = (ULONG)WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
+
+    if( WinSendMsg( hwndHMLE, HMLM_QUERYREADONLY, 0, 0 ))
+        return 0L;
 
     strcpy(szTitle,"Import");
 
@@ -1144,9 +1177,12 @@ ULONG HEOptions(HWND hwnd)
 HWND hwndDlg;
 ULONG TextFormat = (ULONG) WinSendMsg(hwndHMLE,HMLM_QUERYTEXTFORMAT,0L,0L);
 ULONG HanType   = (ULONG)  WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
+ULONG ulrc = ( ULONG ) WinSendMsg( hwndHMLE, HMLM_QUERYWRAP, 0, 0 );
 //int old_eoltype = TextFormat;
 //int old_hantype = HanType;
-ULONG ulrc;
+BOOL wordWrap = SHORT1FROMMR( ulrc );
+int  wordWrapSize = SHORT2FROMMR( ulrc );
+CHAR size[ 10 ];
 
     hwndDlg = WinLoadDlg(HWND_DESKTOP,hwnd,&WinDefDlgProc,NULLHANDLE,IDD_OPTIONS,NULL);
 
@@ -1159,7 +1195,13 @@ ULONG ulrc;
         else
         WinSendMsg(WinWindowFromID(hwndDlg,IDB_HT_SY),BM_SETCHECK,MPFROMLONG(1L),0L);
 
-    WinSetFocus(HWND_DESKTOP,hwndDlg);
+    WinSendMsg( WinWindowFromID( hwndDlg, IDB_WORDWRAP ), BM_SETCHECK,
+                MPFROMLONG( SHORT1FROMMR( wordWrap )), 0 );
+
+    _itoa( wordWrapSize, size, 10 );
+    WinSetWindowText( WinWindowFromID( hwndDlg, IDEF_WORDWRAP_SIZE ), size );
+
+    //WinSetFocus(HWND_DESKTOP,hwndDlg);
 
     ulrc = WinProcessDlg(hwndDlg);
 
@@ -1183,6 +1225,14 @@ ULONG ulrc;
             WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
             WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
             }
+
+        wordWrap = ( BOOL )WinSendDlgItemMsg( hwndDlg, IDB_WORDWRAP, BM_QUERYCHECK, 0, 0 );
+        WinQueryWindowText( WinWindowFromID( hwndDlg, IDEF_WORDWRAP_SIZE ), sizeof( size ), size );
+        wordWrapSize = atoi( size );
+        if(( wordWrapSize != 0 ) && ( wordWrapSize < MIN_WORDWRAP_SIZE ))
+            wordWrapSize = MIN_WORDWRAP_SIZE;
+
+        WinSendMsg( hwndHMLE, HMLM_SETWRAP, MPFROMLONG( wordWrap ), MPFROMSHORT( wordWrapSize ));
         }
     WinDestroyWindow(hwndDlg);
     return 0L;
@@ -1244,6 +1294,20 @@ int size = (int)WinSendMsg(hwndHMLE,HMLM_QUERYTEXTLENGTH,0,0);
     return 0L;
 }
 
+ULONG HESpecialChars( HWND hwnd )
+{
+    WinSendMsg( hwndHIA, WM_CHAR, MPFROM2SHORT( KC_VIRTUALKEY, 0 ), MPFROM2SHORT( 0, VK_F4 ));
+
+    return 0;
+}
+
+ULONG HEHanja( HWND hwnd )
+{
+    WinSendMsg( hwndHIA, WM_CHAR, MPFROM2SHORT( KC_VIRTUALKEY, 0 ), MPFROM2SHORT( 0, VK_F9 ));
+
+    return 0;
+}
+
 ULONG HESetTitlebarText(HWND hwnd)
 {
 HWND hwndOwner = WinQueryWindow(hwnd,QW_PARENT);
@@ -1276,8 +1340,9 @@ int HEFileOpenWithAutoHanCode(HWND hwnd,char *filename,int enableReload)
     _fullpath( szFullPath, filename, sizeof( szFullPath ));
     ret = HEFileOpen( hwnd, szFullPath, enableReload );
 
-    if( ret != ( int )HanType )
+    if(( ret != -1 ) && ( ret != ( int )HanType ))
     {
+/*
         if( ret == HMLE_HAN_SY )
         {
             WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_SY),0L);
@@ -1286,6 +1351,9 @@ int HEFileOpenWithAutoHanCode(HWND hwnd,char *filename,int enableReload)
             WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
             WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
         }
+*/
+        WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG(ret),0L);
+        WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(ret),0L);
 
         ret = HEFileOpen( hwnd, szFullPath, enableReload );
     }
@@ -1305,22 +1373,33 @@ int ret = 0;
 
     if( buf != NULL )
     {
+        BOOL readOnly = ( BOOL )WinSendMsg( hwndHMLE, HMLM_QUERYREADONLY, 0, 0 );
+
+        WinSendMsg( hwndHMLE, HMLM_SETREADONLY, MPFROMLONG( FALSE ), 0 );
+
         WinSendMsg(hwndHMLE,HMLM_SETIMPORTEXPORT,buf,MPFROMLONG(size+1));
         WinSendMsg(hwndHMLE,HMLM_IMPORT,0,0);
         WinSendMsg(hwndHMLE,HMLM_SETFIRSTCHAR,MPFROMLONG(0),0);
 
+        WinSendMsg( hwndHMLE, HMLM_SETREADONLY, MPFROMLONG( readOnly ), 0 );
+/*
         _fullpath( szFullPath,filename, sizeof( szFullPath ));
         extractDirname();
         _chdir2(szDir);
+*/
         if (enableReload) EnableReloadButton(hwnd);
         ret = queryHanTypeBuf( buf );
         free( buf );
     }
     else
     {
-        szFullPath[0]=0;
+//        szFullPath[0]=0;
         ret = -1;
     }
+
+    _fullpath( szFullPath,filename, sizeof( szFullPath ));
+    extractDirname();
+    _chdir2(szDir);
 
     HESetTitlebarText(hwnd);
     WinPostMsg(hwndStatbar,STATBAR_USERM_SETMODIFIED,0L,0L);

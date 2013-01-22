@@ -1,3 +1,4 @@
+SHELL = $(COMSPEC)
 CP = cp
 
 default: debug
