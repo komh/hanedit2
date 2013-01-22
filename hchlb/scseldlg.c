@@ -61,7 +61,6 @@ MRESULT scselDlg_wmInitDlg( HWND hwnd, MPARAM mp1, MPARAM mp2 )
     LONG    cxScreen, cyScreen;
     BOOL    usePrev = FALSE;
     RECTL   rcl;
-    int     i;
 
     pscselInfo = PVOIDFROMMP( mp2 );
     if( pscselInfo->category == -1 )
@@ -76,16 +75,6 @@ MRESULT scselDlg_wmInitDlg( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 
     WinSendMsg( hwndHCHLB, HCHLM_SETHORZINT, MPFROMSHORT( 4 ), 0 );
     WinSendMsg( hwndHCHLB, HCHLM_SETVERTINT, MPFROMSHORT( 4 ), 0 );
-
-    for( i = 0x31; i <= 0x7E; i ++ )
-        WinSendMsg( hwndHCHLB, HCHLM_INSERT,
-                    MPFROMSHORT( HCHLIT_END ),
-                    MPFROMSHORT( HCHFROM2CH( 0xD9 + pscselInfo->category, i )));
-
-    for( i = 0x91; i <= 0xFE; i ++ )
-        WinSendMsg( hwndHCHLB, HCHLM_INSERT,
-                    MPFROMSHORT( HCHLIT_END ),
-                    MPFROMSHORT( HCHFROM2CH( 0xD9 + pscselInfo->category, i )));
 
     if( usePrev )
         WinSendMsg( hwndHCHLB, HCHLM_SELECTITEM, MPFROMSHORT( pscselInfo->index ),
