@@ -744,16 +744,7 @@ int i;
 
 void HIA_NotifyToConnected(HIA *hia,USHORT notifCode,MPARAM mp2)
 {
-#ifndef __KIME__
     WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
         MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
-#else
-    if(( notifCode == HIAN_INSERTHCH ) || ( notifCode == HIAN_COMPO_COMPLETE ))
-        WinSendMsg(hia->responseTo->hwnd,WM_CONTROL,
-            MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
-    else
-        WinPostMsg(hia->responseTo->hwnd,WM_CONTROL,
-            MPFROM2SHORT(hia->responseTo->id,notifCode),mp2);
-#endif
 }
 
