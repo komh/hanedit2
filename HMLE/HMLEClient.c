@@ -1164,7 +1164,7 @@ RECTL rectlUpdate;
     {
         if(( hmle->doc->curLine->prevLine != NULL ) &&
            ( hmle->doc->curLine->prevLine->wordWrapped ))
-        rectlUpdate.yTop += 16;
+            rectlUpdate.yTop += 16;
     }
     else
         rectlUpdate.yBottom = rectlUpdate.yTop - 16;
