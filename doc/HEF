@@ -1,0 +1,111 @@
+0.HEF - HanEntryField Control
+
+HEF를 사용하려면 HEF.h와 HEF.a(HEF.lib)를 각각 include/link 시켜야 함.
+
+ 이 문서에 언급되지 않은 윈도우 스타일,메시지,통지 메시지(Notification msg)등은
+정상적으로 작동한다고 볼 수 없음.이 문서에 언급된 것들은 불완전하지만,
+그런대로 사용은 가능함.
+
+ 디폴트로 4095바이트까지 입력가능.
+
+1.Window Class : WC_HEF ("HanEntryField")
+
+	RegisterHanEntryFieldControl(HAB hab);
+
+2.Window Styles :
+
+	HES_MARGIN
+	HES_READONLY
+	HES_UNREADABLE
+	HES_STATUSNOTIFY
+	HES_NOAUTOCREATEHIA
+	HES_ACCEPTFILEDROP
+
+3.Window Messages:
+
+	HEM_SETHIA
+	HEM_QUERYHIA
+	HEM_QUERYTEXTLENGTH
+	HEM_QUERYTEXT
+	HEM_SETTEXTLIMIT
+	HEM_QUERYTEXTLIMIT
+	HEM_SETHANTYPE
+	HEM_QUERYHANTYPE
+	HEM_SETCHANGED
+	HEM_QUERYCHANGED
+	HEM_SETREADONLY
+	HEM_QUERYREADONLY
+	HEM_SETSEL
+	HEM_QUERYSEL
+	HEM_SETFIRSTCHAR
+	HEM_QUERYFIRSTCHAR
+	HEM_SETTEXTCOLOR
+	HEM_QUERYTEXTCOLOR
+	HEM_SETBACKCOLOR
+	HEM_QUERYBACKCOLOR
+	HEM_SETSELTEXTCOLOR
+	HEM_QUERYSELTEXTCOLOR
+	HEM_SETSELBACKCOLOR
+	HEM_QUERYSELBACKCOLOR
+	HEM_COPY
+	HEM_CUT
+	HEM_PASTE
+	HEM_CLEAR
+	HEM_REFRESH
+
+  1) HEM_SETHIA :
+
+	mp1 : HWND hwndHIA (HIA 윈도우 핸들)
+
+	HIA에 HEF를 register시킴.
+
+  2) HEM_QUERYHIA :
+
+	return : HWND hwndHIA
+
+	현재 HEF가 register된 HIA를 리턴함.
+
+
+4.Window Notification Messages (WM_CONTROL Messages) :
+
+	HEN_SETFOCUS
+	HEN_KILLFOCUS
+	HEN_CHANGE
+	HEN_BEGINSELECTION
+	HEN_ENDSELECTION
+
+  1) HEN_BEGINSELECTION :
+
+	키보드나 마우스를 사용한 블럭선택이 시작됨.
+
+  2) HEN_ENDSELECTION :
+
+	키보드나 마우스를 사용한 블럭선택이 끝남.
+
+
+5.Window Control Data Structure :
+
+typedef struct
+{
+	USHORT cb;
+	ULONG han_type;
+	HWND hwndHIA;
+} HEFCTLDATA, *PHEFCTLDATA;
+
+  1) USHORT cb : sizeof(HEFCTLDATA)
+  2) ULONG han_type :
+
+	HEF_HAN_KS - KS 완성형
+	HEF_HAN_SY - 상용 조합형
+
+  3) HWND hwndHIA
+
+	HEF를 생성할 때 이 필드에 적당한 HIA를 넘겨주면
+	생성된 HEF는 자동적으로 HIA에 register된다.
+
+	만약 이 필드가 NULL이고 HES_NOAUTOCREATEHIA 스타일이
+	지정되어있지 않다면 새로운 HIA가 생성되어 HEF에게
+	등록된다.단 HES_NOAUTOCREATEHIA 스타일이 지정되어 있다면
+	생성된 HEF는 HEM_SETHIA로 HIA를 지정해 줄 때까지 HIA없는
+	상태로 남아있게 된다.(대부분의 입력 불가능)
+

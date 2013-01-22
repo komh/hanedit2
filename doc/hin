@@ -1,0 +1,167 @@
+hin - 한글 입력부
+
+hin.h	: 한글 입력 루틴의 인터페이스
+hin.c	: 한글 입력 루틴의 구현
+ha2.c,ha3.c
+	: 2벌식,3벌식 오토마타 루틴
+
+* 동작 방식/사용법
+
+한글 입력 루틴은 별도의 OBJECT WINDOW로 존재하게 된다.이 윈도우의 클래스는
+WC_HIA ("HanInputAutomata")이다.(주:OBJECT WINDOW - HWND_OBJECT를 owner로
+갖는 윈도우로서 PM으로부터 입출력 메시지를 받지 않는다.자세한 건 툴킷 문서
+참조) 한글 입력을 처리하고자 하는 컨트롤이나 윈도우는 한글입력 윈도우에
+WM_CHAR 메시지를 보내고 그로부터 WM_CONTROL 메시지를 받아 처리하는 방식을
+취한다.
+
+우선은 RegisterHanAutomataClass()를 사용하여 한글입력 윈도우 클래스를
+등록시키고(hanEdit의 winmain()참조),HIACreateHanAutomata()를 사용하여
+윈도우를 생성한다.이때 넘겨주는 HWND hwndOwner는 사실은 생성시킬
+한글입력 윈도우(이하 HIA)의 owner가 아니라 parent가 된다(owner는 HWND_OBJECT).
+그러나 생성된 HIA는 WM_CONTROL 메시지를 HWND_OWNER가 아니라 이 parent
+윈도우에게 보내게 된다.(그리고 parent는 자동적으로 HIA에게 register된다.)
+
+HIA는 한영전환/키보드 전환등의 작업을 하게 되면 그 내용을 자신에게
+register된 윈도우들에게 WM_CONTROL메시지로 통보한다.즉 register란
+그 HIA로부터 Status-Notification-msg를 받겠다고 register한다는 의미이다.
+등록은 HIAM_REGISTERNOTIFY을 사용한다.(등록해제는 HIAM_UNREGISTERNOTIFY)
+하나의 HIA에는 복수개의 윈도우가 동시에 register될 수 있다.
+
+HIA는 한글조합이나 영문 입력등의 작업을 하게 되면 그 내용을 자신에게
+CONNECT된 윈도우에게 WM_CONTROL메시지로 통보한다.이때 하나의 HIA에는
+한번에 하나의 윈도우만이 CONNECT될 수 있다.즉 한글 입력/오토마타 처리는
+이 Connect된 윈도우와 HIA윈도우 사이에서만 이루어진다.보통은 PM상의
+focus를 가지고 있는 윈도우가 HIA와 connect될 것이다.(실제로,HMLE나
+HEF는 WM_FOCUS 메시지를 받으면 자신의 HIA에게 connect/disconnect하기를
+시도한다.즉 포커스를 받으면 HIA에게 connect를 시도하고,포커스를 잃으면
+disconnecte된다)
+
+즉,HIA에게 WM_CHAR메시지를 보내고,조합중인 문자/조합이 끝난 문자에 대한
+통보 메시지를 받으려는 윈도우는 HIA에게 connect되어야 하고,HIA의
+한/영 입력상태나 키보드종류 상태에 대한 통보 메시지를 받으려는 윈도우는
+HIA에 register되어있어야 한다.
+
+
+connected 윈도우는 WM_CHAR 메시지를 받으면 이것을 다시 자신의 HIA에게
+WM_CHAR메시지로 전달한다.HIA는 상황에 따라
+
+	a) 적절한 한글 오토마타 루틴을 호출하여 처리한 후 결과값을
+	   connected 윈도우에게 WM_CONTROL메시지로 통보하거나,
+	b) 한영전환,키보드 전환,삽입/겹쳐쓰기 전환 등의 상태를 전환한 후
+	   registered 윈도우들에게 WM_CONTROL 메시지로 통보하거나,
+	c) 기타 작업을 하거나
+	d) 그냥 리턴한다.
+
+이때 a),b),c)의 경우에는 TRUE를 리턴하고, d)의 경우에는 FALSE를 리턴한다.
+TRUE가 리턴되는 경우는,HIA가 그 키입력을 처리했다는 의미이므로 connected는
+별다른 처리를 하지 않고,FALSE가 리턴되었을 경우에는 HIA가 처리하지 않은
+입력이라는 의미이므로 자신이 적절한 처리를 해주면 된다.
+
+가령 HEF에서 현재 조합중인 한글문자가 없을때 BACKSPACE가 입력되면
+HIA는 이 입력을 무시하고 FALSE를 리턴한다.HEF는 리턴값이 FALSE이므로
+적절한 처리를 한다(커서를 앞으로 옮겨 한 글자를 삭제). 그러나
+한글문자'가'가 조합중일때 BACKSPACE가 입력되면 HIA는 '가'를 'ㄱ'로
+바꾸고 그 내용을 HEF에게 WM_CONTROL메시지로 통보한 뒤,TRUE를 리턴한다.
+HEF는 TRUE가 리턴되었으므로 이미 처리된 키입력으로 간주,더이상 처리를
+하지 않는다.
+
+
+HIA가 connected 윈도우에게 통지하는 WM_CONTROL 메시지들은 다음과 같다.
+
+HIAN_INSERTHCH:
+	영문자나 숫자,!@#$과 같은 아스키 코드가 WM_CHAR로 들어오거나
+	조합중이던 한글 문자가 완성된 경우 해당 코드가 WM_CONTROL 메시지의
+	두번째 파라메터(mp2)의 LOWORD로 넘겨진다.connected 윈도우에서는
+	HANCHAR hch = SHORT1FROMMP(mp2);와 같은	방법으로 이 값을 얻을 수 있다.
+
+	한글 문자가 완성된 경우라면,HIAN_INSERTHCH가 보내어지기에 앞서 먼저
+	HIAN_COMPO_COMPLETE가 보내어진다. 두 메시지 모두 파라메터의 내용은
+	같으므로,통지 메시지를 받은 윈도우는 어느 메시지나 선택해서 사용할
+	수 있다.(실제로,HMLE/HEF는 영문/숫자 입력은 HIAN_INSERTHCH에서
+	처리하나,한글 문자 입력은 HIAN_COMPO_COMPLETE에서 처리하고 있다.)
+
+HIAN_COMPO_BEGIN:
+	새로운 한글문자를 조합하기 시작하면 해당 HANCHAR를 WM_CONTROL
+	메시지의 mp2의 HIWORD로 넘긴다.connected 윈도우에서는
+	HANCHAR newHch = SHORT2FROMMP(mp2); 와 같은 방법으로 이 값을
+	얻을 수 있다.
+
+HIAN_COMPO_STEP:
+	이미 조합중인 한글문자가 존재하여 새로 입력받은 키와 조합하는
+	경우에 해당 HANCHAR를 mp2의 HIWORD로 넘긴다.(위 항목 참조)
+	예를 들어 'ㄱ'가 입력된 상태에서 'ㅏ'를 '가'로 만드는 경우에
+	발생한다.
+
+HIAN_COMPO_STEPBACK:
+	이미 조합중인 한글문자가 존재할때 BACKSPACE가 입력된 경우이다.
+	'가'가 조합중인 상태에서 BACKSPACE가 입력되면 'ㄱ'가 mp2의
+	HIWORD로 넘겨진다.
+
+	단 BACKSPACE의 처리로 조합중이던 한글문자가 완전히 취소될 경우에는
+	HIAN_COMPO_STEPBACK대신 HIAN_COMPO_CANCEL이 통지된다.
+
+HIAN_COMPO_CANCEL:
+	한글문자가 조합중이었다가 BACKSPACE가 입력되어 완전히
+	취소될 경우에 통지된다.
+	예를 들어 'ㄱ'가 조합중인 상태에서 BACKSPACE가 입력되면
+	HIAN_COMPO_BACKSTEP이 아니라 HIAN_COMPO_CANCEL이 통지된다.
+
+HIAN_COMPO_COMPLETE:
+	조합중이던 한글문자가 완성되었을 경우이다.완성된 HANCHAR은
+	mp2의 LOWORD로 넘겨지며,만약 조합이 끝나는 동시에 새로운
+	조합이 시작되었다면,해당 HANCHAR이 mp2의 HIWORD로 넘겨진다.
+	그렇지 않다면 mp2의 HIWORD에는 0이 넘겨진다.
+
+	예를 들어 '간'이 조합중일 때 'ㅏ'가 입력된다면 완성된 '가'는
+	mp2의 LOWORD로 넘겨지며,새로이 조합이 시작되는 '나'는 HIWORD로
+	넘겨진다.
+	또한 '간'이 조합중일때 SHIFT-SPACE가 입력되어 영문입력상태로
+	전환된다면,완성된 '간'이 mp2의 LOWORD로 넘겨지나 HIWORD에는
+	0이 넘겨진다.
+
+	본 통지 메시지가 보내어진 직후 같은 파라메터로 HIAN_INSERTHCH가
+	connected 윈도우에게 통지한다.통지받은 윈도우는 한글 입력을 위해
+	어느 메시지나 취사선택 할 수 있다.(HMLE,HEF는 HIAN_COMPO_COMPLETE를
+	처리할 때 한글문자를 본문에 삽입한다.)
+
+
+HIA가 registered 윈도우에게 통지하는 메시지는 다음과 같다.
+
+HIAN_CONNECT:
+	HIA가 특정한 윈도우와 CONNECT될때 통지된다.해당 윈도우가 새로이
+	connect되는 윈도우라면 mp2로 TRUE가,아니면 FALSE가 넘겨진다.
+
+HIAN_HANMODECHANGED:
+	한/영 전환시 통지된다.mp2로 HCH_HAN이나 HCH_ENG가 넘겨진다.
+
+HIAN_INSERTMODECHANGED:
+	삽입/겹쳐쓰기 전환시 통지된다.mp2로 HAN_INSERT나 HAN_OVERWRITE가
+	넘겨진다.
+
+HIAN_KBDTYPECHANGED:
+	키보드 종류 전환시 통지된다.mp2로 HAN_KBD2,HAN_KBD390,HAN_KBD3FINAL이
+	넘겨진다.
+
+
+다음은 HIA가 받는 메시지들이다.
+
+WM_CHAR:
+	키 입력을 받아 한글입력 오토마타로 넘기거나,각종 처리를 한다.
+	HIA가 키입력을 처리했다면 TRUE가,아니면 FALSE가 리턴된다.
+
+HIAM_CONNECT:
+	HIA에 connect할 윈도우를 mp1로 넘긴다.이때 register된 윈도우만이
+	connect될 수 있다.
+	만약 mp1에 NULL이 넘겨진다면,HIA는 자신의 parent 윈도우에게
+	connect를 시도한다.
+
+	성공하면 TRUE,실패하면 FALSE를 리턴한다.
+
+HIAM_REGISTERNOTIFY:
+	mp1로 넘겨진 윈도우가 HIA로부터 상태 통지 메시지를 받도록
+	등록한다.
+
+HIAM_UNREGISTERNOTIFY:
+	mp1로 넘겨진 윈도우가 HIA로부터 더이상 상태 통지 메시지를
+	받지 않도록 등록해제한다.
+

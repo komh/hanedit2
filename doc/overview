@@ -1,0 +1,110 @@
+hanLib/hanControls/hanEdit 소스 배포본
+---------------------------------------
+
+0.소개
+
+hanLib는 영문 PM상에서 고정폭 한글을 구현하기 위한 라이브러리입니다.
+hanControls는 hanLib를 사용하여 각종 한글 컨트롤들을 구현한
+라이브러리입니다.마지막으로 hanEdit/2는 이들을 사용한
+한글 편집기입니다.
+
+hanLib를 만드는 데는 하이텔 남상규님(halite)의 nhl0.2가
+참고되었으며,본 소스는 GPL에 따라 배포됩니다.
+
+1.디렉토리 구성
+
+hanEdit\	HanEdit/2
+hanlib\		hanLib
+HMLE\		hanControls: hanMLE
+HEF\		hanControls: hanEntryField
+HST\		hanControls: hanStatic(Text)
+etclib\		기타 잡다한 utility functions
+
+
+2.hanEdit\
+
+HanEdit/2의 소스디렉토리로,HMLEdit.c에 main()이
+포함되고,toolbar.c statbar.c는 각각 툴바와 상태바
+컨트롤을 담당합니다.
+
+앞으로는 특수문자 입력 기능을 추가해야 할 것입니다.
+
+
+3.hanlib\
+
+:기본적인 한글 라이브러리입니다.크게 세가지 파트로 나뉘어 있습니다.
+
+hch :	한글 코드와 관련된 상수,함수들이 정의됩니다.
+	한글코드변환 루틴은 이곳에 포함됩니다.
+	hch.h와 hch\ 디렉토리의 소스들이 이 파트로 분류됩니다.
+	현재로선 쓸데없는 것들이 대부분입니다. --> 정리 필요
+
+hout :	PM상의 한글 출력과 관련된 파트입니다.
+	hout.h hout.c font.h가 이 파트의 소스입니다.
+
+hin :	PM상의 한글 입력과 관련된 파트입니다.
+	hin.h hin.c hinbuf.c ha2.c ha3.c hin_internal.h가
+	이 파트의 소스입니다.
+
+hanLib를 사용하기 위해서는 han.h를 인클루드합니다.
+
+
+4.HMLE\
+
+PM의 MLE(Multi-line Edit) 컨트롤에 대응하는 hanMLE 컨트롤입니다.
+MLE의 메시지,스타일,Notification메시지(WM_CONTROL메시지)등을
+최소한의 것만 비슷하게 구현하고 있습니다.즉 아직은 되는것보다는
+안되는 것이 더 많습니다.(wordwrap style,MLM_QUERYFORMATRECT등등등)
+최종목표는 MLE와 똑같은 인터페이스를 제공하는 동시에 drag&drop등의
+확장된 기능들을 갖추게 하는 것입니다..만.
+처음부터 디자인을 잘못했기 때문에,낭비된 코드가 너무 많습니다.
+--> 디자인부터 다시 시작해서 재작성할 필요 있음.
+
+5.HEF\
+
+PM의 Entryfield 컨트롤에 대응하는 hanEntryField 컨트롤입니다.
+역시 최소한의 것만을 구현하고 있습니다.
+HES_ACCEPTFILEDROP 스타일을 줄 경우 화일을 drag&drop할 수 있습니다.
+(화일의 절대경로가 입력됨)
+
+
+6.HST\
+
+PM의 Static 컨트롤의 Text스타일에만 대응하는 hanStaticText
+컨트롤입니다.아직은 조잡한 수준이며,앞으로는 기본 Static 컨트롤에
+대응하는 hanStatic 컨트롤이 되어야 할 것입니다.
+
+
+7.etclib\
+
+textutil	: 텍스트를 이리저리 다루기 위한 몇가지 함수들
+debugutil	: 디버깅을 위해 사용한 몇가지 함수들
+
+
+8.소스를 공개하며..
+
+ 영문 PM환경에서의 한글 환경,한글 컨트롤들을 제공하는 라이브러리를
+만들겠다는 생각으로 여기까지 왔습니다만..어쩌면 애초에 혼자서 각
+컨트롤들을 완전히 새로 만든다는 것-그것도 C로-자체가 무리였을지도
+모르겠습니다.나름대로 꽤나 공을 들였지만,여전히 표준 컨트롤들의 많은
+feature들이 지원되지 않고 있습니다.
+
+ 뭐,하지만 나름대로 많은 것을 얻게 되었기에 후회는 없고,
+이 소스공개로 다른 PM프로그래머들에게 조금이라도 도움이 된다면
+기쁘겠습니다.
+
+ 앞으로도 시간이 허락한다면,C++버젼의 hanLib/hanControls에
+도전해보고 싶습니다.
+
+ 마지막으로,관심을 갖고 도와주신 하이텔 btcolx 송원회님께
+감사를 드립니다.
+
+
+from kwisatz
+
+-------------------------------
+하이텔,나우누리: kwisatz 문유성
+email:	kwisatz@mail.hitel.net
+	kwisatz@netian.com
+-------------------------------
+
