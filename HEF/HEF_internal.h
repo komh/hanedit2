@@ -15,51 +15,52 @@
 #include "../hanlib/han.h"
 #include "HEF.h"
 
-#define WC_HEF_CLIENT			("HanEntryField:Client")
+#define WC_HEF_CLIENT           ("HanEntryField:Client")
 
-#define FKC_NONE(fl)		(!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
-#define FKC_EXALT(fl)		(!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_EXCTRL(fl)		(!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
-#define FKC_EXSHIFT(fl)		(!(fl & KC_SHIFT) && (fl & (KC_ALT|KC_CTRL)))
-#define FKC_HASALT(fl)		(fl & KC_ALT)
-#define FKC_HASCTRL(fl)		(fl & KC_CTRL)
-#define FKC_HASSHIFT(fl)	(fl & KC_SHIFT)
-#define FKC_ALTONLY(fl)		((fl & KC_ALT) && !(fl & (KC_SHIFT|KC_CTRL)))
-#define FKC_CTRLONLY(fl)	((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
-#define FKC_SHIFTONLY(fl)	((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
+#define FKC_NONE(fl)        (!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
+#define FKC_EXALT(fl)       (!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
+#define FKC_EXCTRL(fl)      (!(fl & KC_CTRL) && (fl & (KC_ALT|KC_SHIFT)))
+#define FKC_EXSHIFT(fl)     (!(fl & KC_SHIFT) && (fl & (KC_ALT|KC_CTRL)))
+#define FKC_HASALT(fl)      (fl & KC_ALT)
+#define FKC_HASCTRL(fl)     (fl & KC_CTRL)
+#define FKC_HASSHIFT(fl)    (fl & KC_SHIFT)
+#define FKC_ALTONLY(fl)     ((fl & KC_ALT) && !(fl & (KC_SHIFT|KC_CTRL)))
+#define FKC_CTRLONLY(fl)    ((fl & KC_CTRL) && !(fl & (KC_ALT|KC_SHIFT)))
+#define FKC_SHIFTONLY(fl)   ((fl & KC_SHIFT) && !(fl & (KC_ALT|KC_CTRL)))
 
-#define WINWORD_INSTANCE	0
+#define WINWORD_INSTANCE    0
 
-#define HEFID_CLIENT		(TID_USERMAX-1)
+#define HEFID_CLIENT        (TID_USERMAX-1)
 
-#define HEFCID_TIMER		(TID_USERMAX-1)
-#define HEFCID_HIA			(TID_USERMAX-2)
+#define HEFCID_TIMER        (TID_USERMAX-1)
+#define HEFCID_HIA          (TID_USERMAX-2)
 
-#define HEF_BORDERWIDTH		1
+#define HEF_BORDERWIDTH     1
 
 typedef struct tagHEF {
-	HWND hwndHEF;
-	HWND hwndClient;
-	HWND hwndHIA;
-	int  connectedToHIA;
-	HEFCTLDATA *pCtlData;
-	HANCHAR hchComposing;
-	char *str;
-	int allocsize;
-	int anchorStx;
-	int curStx;
-	BOOL selection;
-	int beginCol;
-	int fgColor;
-	int bgColor;
-	int selfgColor;
-	int selbgColor;
-	BOOL changed;
-	BOOL readonly;
-	BOOL unreadable;
+    HWND hwndHEF;
+    HWND hwndClient;
+    HWND hwndHIA;
+    int  connectedToHIA;
+    HEFCTLDATA *pCtlData;
+    HANCHAR hchComposing;
+    UCHAR *str;
+    int allocsize;
+    int anchorStx;
+    int curStx;
+    BOOL selection;
+    int beginCol;
+    int fgColor;
+    int bgColor;
+    int selfgColor;
+    int selbgColor;
+    BOOL changed;
+    BOOL readonly;
+    BOOL unreadable;
+    BOOL skipFocusNotify;
 
-	int xSize;
-	char *outputBuf;
+    int xSize;
+    char *outputBuf;
 } HEF;
 
 MRESULT APIENTRY HEFWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2);
@@ -67,10 +68,10 @@ MRESULT APIENTRY HEFClientWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2);
 
 // Client
 
-#define HEMC_REFRESH				(WM_USER+1)
-#define HEMC_REFRESHCURSOR			(WM_USER+2)
+#define HEMC_REFRESH                (WM_USER+1)
+#define HEMC_REFRESHCURSOR          (WM_USER+2)
 
-#define HEFSelectionState(hef)		((hef)->selection)
+#define HEFSelectionState(hef)      ((hef)->selection)
 
 void HEFWND_Notify(HWND hwnd,USHORT notifCode,MPARAM mp2);
 void HEFWND_Client_Notify(HWND hwnd,USHORT notifCode,MPARAM mp2);

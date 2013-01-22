@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <ctype.h>
+
 #include "HMLE_internal.h"
+
+#include "../hchlb/hchlb.h"
 
 #define HMLEID_CLIENT           (TID_USERMAX - 1)
 #define HMLEID_VSCROLL          (TID_USERMAX - 2)
@@ -12,6 +15,7 @@ static MRESULT hmle_wmDestroy(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_wmSetFocus(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_wmSize(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_wmVScroll(HWND hwnd,MPARAM mp1,MPARAM mp2);
+static MRESULT hmle_wmHScroll(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_wmPaint(HWND hwnd,MPARAM mp1,MPARAM mp2);
 static MRESULT hmle_wmCalcFrameRect(HWND hwnd,MPARAM mp1,MPARAM mp2);
 
@@ -76,7 +80,9 @@ BOOL rc;
     if (rc==FALSE) return rc;
     rc = WinRegisterClass( hab, WC_HMLE_Client, HMLEClientWinProc,
                 CS_SIZEREDRAW, 8 );
-    return rc;
+    if (rc==FALSE) return rc;
+
+    return RegisterHanCharListBoxControl( hab );
 }
 
 void HMLEWND_Notify(HWND hwnd,USHORT notifCode,MPARAM mp2)
@@ -151,6 +157,7 @@ MRESULT APIENTRY HMLEWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case WM_SIZE:                   return hmle_wmSize( hwnd, mp1, mp2 );
     case WM_PAINT:                  return hmle_wmPaint( hwnd, mp1, mp2 );
     case WM_VSCROLL:                return hmle_wmVScroll(hwnd,mp1,mp2);
+    case WM_HSCROLL:                return hmle_wmHScroll(hwnd,mp1,mp2);
     default:                        return WinDefWindowProc( hwnd, msg, mp1, mp2 );
     }
 }
@@ -360,35 +367,55 @@ MRESULT hmle_wmSize(HWND hwnd,MPARAM mp1,MPARAM mp2)
 HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 ULONG flStyle = WinQueryWindowULong( hwnd, QWL_STYLE );
 USHORT ncx,ncy;
-HWND hwndVScroll,hwndHScroll;
-LONG y = 0;
+HWND hwndVScroll = NULLHANDLE,hwndHScroll = NULLHANDLE;
+LONG x = 0, y = 0;
 LONG    sv_cxVscroll = WinQuerySysValue(HWND_DESKTOP,SV_CXVSCROLL);
 LONG    sv_cyHscroll = WinQuerySysValue(HWND_DESKTOP,SV_CYHSCROLL);
 
     ncx = SHORT1FROMMP(mp2);
     ncy = SHORT2FROMMP(mp2);
 
+    if( flStyle & HMLS_BORDER )
+    {
+        ncx -= HMLE_BORDERSIZE * 2;
+        ncy -= HMLE_BORDERSIZE * 2;
+        x += HMLE_BORDERSIZE;
+        y += HMLE_BORDERSIZE;
+    }
+
     if (flStyle & HMLS_VSCROLL)
         {
         hwndVScroll = WinWindowFromID(hwnd,HMLEID_VSCROLL);
         WinSetWindowPos(hwndVScroll,NULLHANDLE,
-                ncx-sv_cxVscroll,0,sv_cxVscroll,ncy,
+                x + ncx - sv_cxVscroll, y, sv_cxVscroll,ncy,
                 SWP_SIZE|SWP_MOVE);
-        ncx -= (sv_cxVscroll-1);
+        ncx -= sv_cxVscroll;
         }
     if (flStyle & HMLS_HSCROLL)
         {
         hwndHScroll = WinWindowFromID(hwnd,HMLEID_HSCROLL);
         WinSetWindowPos(hwndHScroll,NULLHANDLE,
-                0,0,ncx,sv_cyHscroll,
+                x, y, ncx + 1,sv_cyHscroll,
                 SWP_SIZE|SWP_MOVE);
         ncy -= sv_cyHscroll;
-        y = sv_cyHscroll;
+        y += sv_cyHscroll;
+
+        if( flStyle & HMLS_VSCROLL )
+            WinSetWindowPos(hwndVScroll,NULLHANDLE,
+                x + ncx, y - 1,
+                sv_cxVscroll,ncy + 1,
+                SWP_SIZE|SWP_MOVE);
         }
+
+    WinSetWindowPos(hmle->hwndClient,NULLHANDLE,
+            x,y,ncx,ncy, SWP_SIZE|SWP_MOVE);
+
+/*
     WinSetWindowPos(hmle->hwndClient,NULLHANDLE,
             HMLE_BORDERSIZE,y+HMLE_BORDERSIZE,
             ncx-(HMLE_BORDERSIZE*2),ncy-(HMLE_BORDERSIZE*2),
             SWP_SIZE|SWP_MOVE);
+*/
     return 0L;
 }
 
@@ -428,6 +455,8 @@ ULONG flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
     assert(hps!=NULLHANDLE);
 #endif
 
+    WinFillRect( hps, &rectlUpdate, SYSCLR_BUTTONMIDDLE );
+
     if (flStyle&HMLS_BORDER)
         {
         RECTL rectlEntire;
@@ -442,14 +471,14 @@ ULONG flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
             } */
 
         GpiSetColor(hps,SYSCLR_BUTTONDARK);
-        p.x = rectlEntire.xRight -1;
-        p.y = rectlEntire.yTop -1;
+        p.x = rectlEntire.xRight - 1;
+        p.y = rectlEntire.yTop - 1;
         GpiMove(hps,&p);
-        p.x = 0; GpiLine(hps,&p);
-        p.y = 0; GpiLine(hps,&p);
-        p.x = 1; GpiMove(hps,&p); GpiSetColor(hps,SYSCLR_BUTTONLIGHT);
-        p.x = rectlEntire.xRight-1; GpiLine(hps,&p);
-        p.y = rectlEntire.yTop-2; GpiLine(hps,&p);
+        p.x = rectlEntire.xLeft; GpiLine(hps,&p);
+        p.y = rectlEntire.yBottom; GpiLine(hps,&p);
+        p.x = rectlEntire.xLeft + 1; GpiMove(hps,&p); GpiSetColor(hps,SYSCLR_BUTTONLIGHT);
+        p.x = rectlEntire.xRight - 1; GpiLine(hps,&p);
+        p.y = rectlEntire.yTop - 2; GpiLine(hps,&p);
         }
     WinEndPaint(hps);
 
@@ -469,10 +498,34 @@ USHORT pos = SHORT1FROMMP(mp2);
     case SB_PAGEUP:             HMLEPageUp(hmle);       break;
     case SB_PAGEDOWN:           HMLEPageDown(hmle);     break;
     case SB_SLIDERTRACK:
-        HMLESetPage(hmle,pos);
+        HMLESetPageLine(hmle,pos);
         break;
     case SB_SLIDERPOSITION:
-        HMLESetPage(hmle,pos);
+        HMLESetPageLine(hmle,pos);
+        break;
+    }
+
+    WinPostMsg(hmle->hwndClient,HMLMC_REFRESHCURSOR,0,0);
+    return 0L;
+}
+
+MRESULT hmle_wmHScroll(HWND hwnd,MPARAM mp1,MPARAM mp2)
+{
+HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
+USHORT cmd = SHORT2FROMMP(mp2);
+USHORT pos = SHORT1FROMMP(mp2);
+
+    switch (cmd)
+    {
+    case SB_LINEUP:             HMLEColLeft(hmle);       break;
+    case SB_LINEDOWN:           HMLEColRight(hmle);      break;
+    case SB_PAGEUP:             HMLEPageLeft(hmle);      break;
+    case SB_PAGEDOWN:           HMLEPageRight(hmle);     break;
+    case SB_SLIDERTRACK:
+        HMLESetPageCol(hmle,pos);
+        break;
+    case SB_SLIDERPOSITION:
+        HMLESetPageCol(hmle,pos);
         break;
     }
 
@@ -493,13 +546,19 @@ MRESULT hmle_wmCalcFrameRect(HWND hwnd,MPARAM mp1,MPARAM mp2)
 PPOINTL p = mp1;
 ULONG flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
 
-    p->x = p->x*8 + HMLE_BORDERSIZE*2;
+    p->x = p->x*8;
     if (flStyle & HMLS_VSCROLL)
         p->x += WinQuerySysValue(HWND_DESKTOP,SV_CXVSCROLL);
 
-    p->y = p->y*16 + HMLE_BORDERSIZE*2;
+    p->y = p->y*16;
     if (flStyle & HMLS_HSCROLL)
         p->y += WinQuerySysValue(HWND_DESKTOP,SV_CYHSCROLL);
+
+    if( flStyle & HMLS_BORDER )
+    {
+        p->x += HMLE_BORDERSIZE * 2;
+        p->y += HMLE_BORDERSIZE * 2;
+    }
 
     return 0;
 }
@@ -538,6 +597,7 @@ HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
     WinPostMsg(hwnd,HMLM_REFRESHSCROLLBAR,0L,0L);
     WinPostMsg(hmle->hwndClient,HMLMC_REFRESHCURSOR,0,0);
     WinInvalidateRect(hwnd,NULL,TRUE);
+
     return 0L;
 }
 
@@ -545,6 +605,7 @@ MRESULT hmle_usermRefreshScrollbar(HWND hwnd,MPARAM mp1,MPARAM mp2)
 {
 HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
 HWND    hwndVScroll = WinWindowFromID(hwnd,HMLEID_VSCROLL);
+HWND    hwndHScroll = WinWindowFromID(hwnd,HMLEID_HSCROLL);
 ULONG   flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
 
     if (flStyle & HMLS_VSCROLL)
@@ -561,6 +622,21 @@ ULONG   flStyle = WinQueryWindowULong(hwnd,QWL_STYLE);
         WinSendMsg(hwndVScroll,SBM_SETTHUMBSIZE,
                 MPFROM2SHORT(hmle->ySize,doclines),0);
         }
+
+    if (flStyle & HMLS_HSCROLL)
+        {
+        int docMaxCols = HMLEDocQueryMaxCols(hmle->doc);
+
+        if (docMaxCols > hmle->xSize)
+            WinSendMsg(hwndHScroll,SBM_SETSCROLLBAR,
+                (MPARAM)(hmle->beginColN),MPFROM2SHORT(0,docMaxCols-hmle->xSize+1));
+            else
+            WinSendMsg(hwndHScroll,SBM_SETSCROLLBAR,
+                (MPARAM)(hmle->beginColN),MPFROM2SHORT(0,docMaxCols+1));
+        WinSendMsg(hwndHScroll,SBM_SETTHUMBSIZE,
+                MPFROM2SHORT(hmle->xSize/2,docMaxCols),0);
+        }
+
     return 0L;
 }
 

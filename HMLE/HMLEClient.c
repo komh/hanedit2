@@ -1,5 +1,6 @@
 #include <string.h>
 #include "HMLE_internal.h"
+#include "../hchlb/hchlb.h"
 
 static MRESULT hmlec_wmChar(HWND,MPARAM,MPARAM);
 static MRESULT hmlec_wmCreate(HWND,MPARAM,MPARAM);
@@ -46,6 +47,7 @@ MRESULT APIENTRY HMLEClientWinProc(HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2)
     case WM_BUTTON1MOTIONSTART: return hmlec_wmButton1MotionStart(hwnd,mp1,mp2);
     case WM_BUTTON1MOTIONEND:   return hmlec_wmButton1MotionEnd(hwnd,mp1,mp2);
     case WM_TIMER:              return hmlec_wmTimer(hwnd,mp1,mp2);
+    case WM_QUERYCONVERTPOS:        return MRFROMSHORT( QCP_NOCONVERT );
 
     case DM_DRAGOVER:           return hmlec_dmDragOver(hwnd,mp1,mp2);
     case DM_DROP:               return hmlec_dmDrop(hwnd,mp1,mp2);
@@ -98,8 +100,9 @@ HMLE *hmle = WinQueryWindowPtr(hwnd,WINWORD_INSTANCE);
                     assert(FALSE);
                 #endif
                 }
-        WinPostMsg(hmle->hwndHMLE,HMLM_REFRESH,0,0);
-        WinPostMsg(hwnd,HMLMC_REFRESHCURSOR,0,0);
+        WinPostMsg(hwnd,HMLM_REFRESHSCROLLBAR,0L,0L);
+        WinPostMsg(hmle->hwndClient,HMLMC_REFRESHCURSOR,0,0);
+        WinInvalidateRect(hwnd,NULL,TRUE);
         } else {
 
         if (hmle->doc->hchComposing!=0)
@@ -128,6 +131,7 @@ USHORT ncx,ncy;
     hmle->xSize = (ncx+7)/8;
     hmle->ySize = (ncy+15)/16;
 
+    printf("wmSize\n");
     WinPostMsg(hmle->hwndHMLE,HMLM_REFRESH,0L,0L);
 
     return MRFROMLONG(0L);
@@ -589,6 +593,13 @@ BOOL    consumed = FALSE;
             HMLERepositionPage(hmle);
             consumed=TRUE;
             }
+        if( FKC_HASALT( fsFlags ))
+        {
+            HMLEColLeft( hmle );
+            HMLEDocMoveCurStxLeft( hmle->doc, 1 );
+            HMLERepositionPage( hmle );
+            consumed = TRUE;
+        }
         break;
     case VK_RIGHT:
         if (consumed) break;
@@ -604,6 +615,13 @@ BOOL    consumed = FALSE;
             HMLERepositionPage(hmle);
             consumed=TRUE;
             }
+        if( FKC_HASALT( fsFlags ))
+        {
+            HMLEColRight( hmle );
+            HMLEDocMoveCurStxRight( hmle->doc, 1 );
+            HMLERepositionPage( hmle );
+            consumed = TRUE;
+        }
         break;
     case VK_UP:
         if (consumed) break;
@@ -653,6 +671,7 @@ BOOL    consumed = FALSE;
             }
         break;
     case VK_PAGEDOWN:
+    case VK_PAGEDOWN + 0x90:
         if (consumed) break;
         if (FKC_NONE(fsFlags) || FKC_SHIFTONLY(fsFlags))
             {
@@ -750,14 +769,14 @@ BOOL    consumed = FALSE;
             HMLEDocSplitCurLine(hmle->doc);
             if( hmle->autoIndent )
             {
-                int stx, col;
+                int stx;
                 HMLELine *line = hmle->doc->curLine->prevLine;
 
-                for( stx = 0, col = 0;
+                for( stx = 0;
                      ( line->str[ stx ] == ' ' ) || ( line->str[ stx ] == '\t' );
-                     stx ++, col ++ )
+                     stx ++ )
                 {
-                    HMLELineInsertHch( hmle->doc->curLine, 0, ' ');
+                    HMLEDocInsertHch( hmle->doc, ' ');
 
                     if( line->str[ stx ] == '\t' )
                     {
@@ -765,12 +784,10 @@ BOOL    consumed = FALSE;
 
                         for( i = 1;
                              i < HMLEDocQueryTabspaceStx( hmle->doc, line, stx );
-                             i ++, col ++ )
-                            HMLELineInsertHch( hmle->doc->curLine, 0, ' ');
+                             i ++ )
+                            HMLEDocInsertHch( hmle->doc, ' ');
                     }
                 }
-
-                HMLEDocMoveCurStxTo( hmle->doc, col );
             }
 
             HMLERepositionPage(hmle);
@@ -780,6 +797,7 @@ BOOL    consumed = FALSE;
             consumed=TRUE;
             }
         break;
+
     } // switch
 
 //  printf("first switch end\n");
@@ -793,6 +811,7 @@ BOOL    consumed = FALSE;
     case VK_DOWN:
     case VK_PAGEUP:
     case VK_PAGEDOWN:
+    case VK_PAGEDOWN + 0x90:
         if (FKC_HASSHIFT(fsFlags))
             {
             if (HMLEDocQueryMarkingState(hmle->doc)==0)
@@ -906,8 +925,8 @@ ULONG   flHIAState;
             break;
         case HIAN_COMPO_COMPLETE:
             hmle->doc->hchComposing = 0;
-            if (SHORT1FROMMP(mp2)) HMLESetChange(hmle);
-            HMLEDocInsertHch(hmle->doc,SHORT1FROMMP(mp2));
+            if ( SHORT1FROMMP( mp2 )) HMLESetChange(hmle);
+            HMLEDocInsertHch(hmle->doc, SHORT1FROMMP( mp2 ));
             HMLEUpdateCurLine(hmle);
             HMLERepositionHoriz(hmle);
             //doc->hchComposing = SHORT2FROMMP(mp2);
@@ -926,6 +945,49 @@ ULONG   flHIAState;
             printf("HIAN_CONNECT:");
             if (hmle->connectedToHIA) printf("TRUE\n"); else printf("FALSE\n");
             break;
+
+        case HIAN_HGHJCONVERT:
+        {
+            HMLELine *line = hmle->doc->curLine;
+            HANCHAR  hch;
+
+/*
+            if( SHORT1FROMMP( mp2 ))
+                HMLEDocMoveCurStxLeft( hmle->doc, 1 );
+*/
+
+            hch = line->str[ hmle->doc->curStx ];
+
+            if( hch < 0x80 )
+            {
+/*
+                if( SHORT1FROMMP( mp2 ))
+                    HMLEDocMoveCurStxRight( hmle->doc, 1 );
+*/
+
+                break;
+            }
+
+            if(( hch >= 0xd9 ) && ( hch <= 0xde ))
+                break;
+
+            hch = HCHFROM2CH( hch, line->str[ hmle->doc->curStx + 1 ]);
+
+            if( hch >= 0xe000 )
+                hch = hch_hj2hg( hch );
+            else
+                hch = hjselDlg( HWND_DESKTOP, hwnd, NULLHANDLE, hch );
+
+            if( hch != HCH_SINGLE_SPACE )
+            {
+                HMLEDocDeleteHch( hmle->doc );
+                HMLEDocInsertHch( hmle->doc, hch );
+                HMLEUpdateCurLine( hmle );
+                HMLERepositionHoriz( hmle );
+                HMLESetChange( hmle );
+            }
+            break;
+        }
         } // note switch end
         break;
     } // control switch end
@@ -1025,9 +1087,9 @@ int ln;
     ln = HMLELineQueryLineNumber(hmle->doc->curLine);
 
     if (ln<hmle->beginLineN)
-        HMLESetPage(hmle,ln);
+        HMLESetPageLine(hmle,ln);
     if (ln>hmle->beginLineN+hmle->ySize-2)
-        HMLESetPage(hmle,ln-hmle->ySize+2);
+        HMLESetPageLine(hmle,ln-hmle->ySize+2);
 }
 
 void HMLERepositionHoriz(HMLE *hmle)
@@ -1112,7 +1174,7 @@ ULONG fSuccess;
             {
             HMLETextThunkGetCRLFString(textThunk,buf);
 
-            if (hmle->han_type == HMLE_HAN_KS)
+//            if (hmle->han_type == HMLE_HAN_KS)
                 hch_sy2ksstr(buf);
 
             WinEmptyClipbrd(hab);
@@ -1151,8 +1213,8 @@ BYTE  *clipbuf;
             if (textThunk)
                 {
                 buf = HMLETextThunkQueryStr(textThunk);
-                if (hmle->han_type == HMLE_HAN_KS)
-                    hch_ks2systr(buf);
+//                if (hmle->han_type == HMLE_HAN_KS)
+                hch_ks2systr(buf);
                 HMLEDocInsertTextThunk(hmle->doc,textThunk);
                     if (hmle->doc->errno==HMLEDOC_ERROR_INSERTIONTRUNCATED)
                         HMLEWNDC_Notify(hmle->hwndClient,HMLN_OVERFLOW,0);
@@ -1193,7 +1255,7 @@ void HMLESetChange(HMLE *hmle)
     HMLEWNDC_Notify(hmle->hwndClient,HMLN_CHANGED,0);
 }
 
-void HMLESetPage(HMLE *hmle,int beginLineN)
+void HMLESetPageLine(HMLE *hmle,int beginLineN)
 {
 LONG oldLineN;
 LONG endLineN;
@@ -1215,22 +1277,58 @@ LONG endLineN;
 
 void HMLELineUp(HMLE *hmle)
 {
-    HMLESetPage(hmle,hmle->beginLineN-1);
+    HMLESetPageLine(hmle,hmle->beginLineN-1);
 }
 
 void HMLELineDown(HMLE *hmle)
 {
-    HMLESetPage(hmle,hmle->beginLineN+1);
+    HMLESetPageLine(hmle,hmle->beginLineN+1);
 }
 
 void HMLEPageUp(HMLE *hmle)
 {
-    HMLESetPage(hmle,hmle->beginLineN - hmle->ySize+1);
+    HMLESetPageLine(hmle,hmle->beginLineN - hmle->ySize+1);
 }
 
 void HMLEPageDown(HMLE *hmle)
 {
-    HMLESetPage(hmle,hmle->beginLineN + hmle->ySize-1);
+    HMLESetPageLine(hmle,hmle->beginLineN + hmle->ySize-1);
+}
+
+void HMLESetPageCol(HMLE *hmle,int beginColN)
+{
+LONG oldColN;
+LONG endColN;
+
+    endColN = HMLEDocQueryMaxCols(hmle->doc) - 1 - hmle->xSize + 2;
+    if (endColN < 0) endColN = 0;
+    if (beginColN<0) beginColN = 0;
+    if (beginColN>endColN) beginColN = endColN;
+
+    oldColN = hmle->beginColN;
+    hmle->beginColN = beginColN;
+    HMLEWNDC_HScroll(hmle->hwndClient,oldColN-beginColN);
+    WinPostMsg(hmle->hwndHMLE,HMLM_REFRESHSCROLLBAR,0,0);
+}
+
+void HMLEColLeft(HMLE *hmle)
+{
+    HMLESetPageCol(hmle,hmle->beginColN-1);
+}
+
+void HMLEColRight(HMLE *hmle)
+{
+    HMLESetPageCol(hmle,hmle->beginColN+1);
+}
+
+void HMLEPageLeft(HMLE *hmle)
+{
+    HMLESetPageCol(hmle,hmle->beginColN - hmle->xSize / 2);
+}
+
+void HMLEPageRight(HMLE *hmle)
+{
+    HMLESetPageCol(hmle,hmle->beginColN + hmle->xSize / 2);
 }
 
 int HMLEQueryXsize(HMLE *hmle)

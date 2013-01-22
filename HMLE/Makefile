@@ -24,6 +24,12 @@ HAN_H =\
 	$(HAN_DIR)/hout.h\
 	$(HAN_DIR)/hin.h
 
+HCHLB_DIR = ../hchlb
+HCHLB_H =\
+	$(HCHLB_DIR)/hchlb.h\
+	$(HCHLB_DIR)/hjseldlg.h
+HCHLBDLG_RES = $(HCHLB_DIR)/hchlbdlg.res
+
 ETC_DIR = ../etclib
 ETC_H = \
 	$(ETC_DIR)/textutil.h\
@@ -46,33 +52,35 @@ debug: HMLE.a HMLE.exe
 release: HMLE.lib
 all: HMLE.a HMLE.lib
 
-HMLE.exe:	HMLETest.o HMLE.a
-	$(CC) $(CFLAGS) -o HMLE.exe HMLETest.o HMLE.a $(HAN_A) $(ETC_O)
+HMLE.exe:	HMLETest.o HMLE.a $(HCHLBDLG_RES)
+	$(CC) $(CFLAGS) -o HMLE.exe HMLETest.o HMLE.a $(HAN_A) $(ETC_O) $(HCHLBDLG_RES)
 
-HMLE.a:	$(HMLE_O)
+HMLE.a: $(HMLE_O)
 	ar cvr HMLE.a $?
 HMLE.lib: $(HMLE_OBJ)
 	emxomfar cvr HMLE.lib $?
 
-HMLETest.o:		HMLE.h $(HAN_H) $(ETC_H)
+HMLETest.o: 	HMLE.h $(HAN_H) $(ETC_H)
+
+$(HCHLBDLG_RES) :
+	$(MAKE) -C $(HCHLB_DIR) hchlbdlg.res
 
 HMLETextThunk.o:	HMLE_internal.h $(HAN_H) $(ETC_H) HMLETextThunk.h
-HMLELine.o:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLELine.h
+HMLELine.o: 	HMLE_internal.h $(HAN_H) $(ETC_H) HMLELine.h
 HMLEDoc.o:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLEDoc.h
 HMLEIpt.o:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLEIpt.h
-HMLEClient.o:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLE.h
-HMLE.o:			HMLE_internal.h $(HAN_H) $(ETC_H) HMLE.h
+HMLEClient.o:		HMLE_internal.h $(HAN_H) $(HCHLB_H) $(ETC_H) HMLE.h
+HMLE.o: 		HMLE_internal.h $(HAN_H) $(HCHLB_H) $(ETC_H) HMLE.h
 
 HMLETextThunk.obj:	HMLE_internal.h $(HAN_H) $(ETC_H) HMLETextThunk.h
 HMLELine.obj:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLELine.h
 HMLEDoc.obj:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLEDoc.h
 HMLEIpt.obj:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLEIpt.h
-HMLEClient.obj:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLE.h
-HMLE.obj:		HMLE_internal.h $(HAN_H) $(ETC_H) HMLE.h
+HMLEClient.obj: 	HMLE_internal.h $(HAN_H) $(HCHLB_H) $(ETC_H) HMLE.h
+HMLE.obj:		HMLE_internal.h $(HAN_H) $(HCHLB_H) $(ETC_H) HMLE.h
 
 touch:
 	touch *.c *.h
 
 clean:
-	-$(RM) *.o *.obj *.bak core *~
-
+	-$(RM) *.o *.obj *.a *.lib *.exe *.bak core *~*

@@ -16,26 +16,55 @@ static int dlgFind_found = FALSE;
 
 MRESULT EXPENTRY HEFindDlgProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp2 )
 {
+    static BOOL tabPressed = FALSE;
+
     switch (msg)
     {
     case WM_INITDLG:
+        tabPressed = TRUE;
         dlgFind_wmInitDlg(hwnd);
         break;
-/*  case WM_CHAR:
+/*
+    case WM_CHAR:
         if (dlgFind_SetButtonFocus(hwnd))
             return 0;
         break;
-*/  case WM_CONTROL:
+*/
+    case WM_CONTROL:
         {
         switch (SHORT1FROMMP(mp1))
         {
         case IDHEF_FIND:
-            if(( SHORT2FROMMP(mp1)==HEN_CHANGE ) || ( SHORT2FROMMP( mp1 ) == HEN_SETFOCUS ))
-                dlgFind_SetButtonFocus(hwnd);
+            switch( SHORT2FROMMP( mp1 ))
+            {
+                case HEN_CHANGE :
+                    dlgFind_SetButtonFocus( hwnd );
+                    break;
+
+                case HEN_SETFOCUS :
+                    WinSendMsg( WinWindowFromID( hwnd, IDHEF_FIND ),
+                                HEM_SETSEL, MPFROM2SHORT( 0, -1 ), 0 );
+                    WinSendMsg( WinWindowFromID( hwnd, IDHEF_FIND ), HEM_REFRESH, 0, 0 );
+
+                    dlgFind_SetButtonFocus(hwnd);
+                    break;
+            }
             break;
         case IDHEF_REPLACE:
-            if(( SHORT2FROMMP(mp1)==HEN_CHANGE ) || ( SHORT2FROMMP( mp1 ) == HEN_SETFOCUS ))
-                dlgFind_SetButtonFocus(hwnd);
+            switch( SHORT2FROMMP( mp1 ))
+            {
+                case HEN_CHANGE :
+                    dlgFind_SetButtonFocus( hwnd );
+                    break;
+
+                case HEN_SETFOCUS :
+                    WinSendMsg( WinWindowFromID( hwnd, IDHEF_REPLACE ),
+                                HEM_SETSEL, MPFROM2SHORT( 0, -1 ), 0 );
+                    WinSendMsg( WinWindowFromID( hwnd, IDHEF_REPLACE ), HEM_REFRESH, 0, 0 );
+
+                    dlgFind_SetButtonFocus(hwnd);
+                    break;
+            }
             break;
         } // control switch
         } break;

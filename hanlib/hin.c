@@ -3,6 +3,8 @@
 #include "hin.h"
 #include "hin_internal.h"
 
+#include "../hchlb/hchlb.h"
+
 #define FKC_NONE(fl)         (!(fl & (KC_ALT|KC_CTRL|KC_SHIFT)))
 
 #define FKC_EXALT(fl)        (!(fl & KC_ALT) && (fl & (KC_SHIFT|KC_CTRL)))
@@ -248,6 +250,7 @@ USHORT ckey;
         case VK_DOWN:
         case VK_PAGEUP:
         case VK_PAGEDOWN:
+        case VK_PAGEDOWN + 0x90:
         case VK_DELETE:
             if ((fsFlags & KC_CHAR) && (FKC_NONE(fsFlags))) break;  // considering keypad
             if (hia->inbuf->newpos != HIABUF_NONE)
@@ -291,6 +294,54 @@ USHORT ckey;
                 return MRFROMLONG(FALSE);
                 }
             break;
+
+        case VK_F4 :
+            if( FKC_NONE( fsFlags ))
+            {
+                SCSELINFO scselInfo = { -1, -1, -1 };
+
+                WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+
+                scselDlg( HWND_DESKTOP, hwnd, NULLHANDLE, &scselInfo );
+                if( scselInfo.hch != HCH_SINGLE_SPACE )
+                {
+                    HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(scselInfo.hch));
+                    HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(scselInfo.hch));
+                }
+
+                return MRFROMLONG( TRUE );
+            }
+            return MRFROMLONG( FALSE );
+
+        case VK_F9 :
+            if( FKC_NONE( fsFlags ))
+            {
+                if( hia->inbuf->newpos != HIABUF_NONE )
+                {
+                    HANCHAR hch = SHORT1FROMMR( WinSendMsg( hwnd, HIAM_QUERYWORKINGHCH, 0, 0 ));
+                    HANCHAR hj;
+
+                    WinEnableWindowUpdate( hia->responseTo->hwnd, FALSE );
+                    WinSendMsg( hwnd, HIAM_CANCELBUF, 0, 0 );
+
+                    hj = hjselDlg( HWND_DESKTOP, hwnd, NULLHANDLE, hch );
+                    if( hj != HCH_SINGLE_SPACE )
+                        hch = hj;
+
+                    HIA_NotifyToConnected(hia,HIAN_COMPO_COMPLETE,MPFROMSHORT(hch));
+                    HIA_NotifyToConnected(hia,HIAN_INSERTHCH,MPFROMSHORT(hch));
+
+                    WinEnableWindowUpdate( hia->responseTo->hwnd, TRUE );
+
+                    //WinSendMsg( hwnd, HIAM_COMPLETEHCH, 0, 0 );
+                    //HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, MPFROMLONG( TRUE ));
+                }
+                else
+                    HIA_NotifyToConnected( hia, HIAN_HGHJCONVERT, 0);
+
+                return MRFROMLONG( TRUE );
+            }
+            return MRFROMLONG( FALSE );
         }   // switch
         } // Virtualkey
 

@@ -90,11 +90,17 @@ void HMLESetChange(HMLE *hmle);
 
 void HMLEQueryIpt(HMLE *hmle,int x,int y,HMLEIpt *ipt);
 
-void HMLESetPage(HMLE *hmle,int beginLineN);
+void HMLESetPageLine(HMLE *hmle,int beginLineN);
 void HMLELineUp(HMLE *hmle);
 void HMLELineDown(HMLE *hmle);
 void HMLEPageUp(HMLE *hmle);
 void HMLEPageDown(HMLE *hmle);
+
+void HMLESetPageCol(HMLE *hmle,int beginColN);
+void HMLEColLeft(HMLE *hmle);
+void HMLEColRight(HMLE *hmle);
+void HMLEPageLeft(HMLE *hmle);
+void HMLEPageRight(HMLE *hmle);
 
 int HMLEQueryXsize(HMLE *hmle);
 int HMLEQueryYsize(HMLE *hmle);

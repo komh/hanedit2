@@ -1,5 +1,5 @@
 #define APPNAME     "HanEdit/2"
-#define VERSION     "0.048a"
+#define VERSION     "0.050"
 #define AUTHOR      "Moon,Yousung / kwisatz@mail.hitel.net"
 #define EXTENDER    "KO Myung-Hun / komh@chollian.net"
 
@@ -24,7 +24,7 @@
 #define APPTITLE    "HanEdit/2"
 
 #define TOOLBAR_YSIZE   20
-#define STATBAR_YSIZE   17
+#define STATBAR_YSIZE   18
 
 #define DEFAULT_HAN_TYPE                (HMLE_HAN_KS)
 #define DEFAULT_EOL_TYPE                (HMLE_EOL_CRLF)
@@ -474,7 +474,7 @@ MRESULT mainwmCreate( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 {
 PCREATESTRUCT pcreate = (PCREATESTRUCT) mp2;
 HMLECTLDATA hmlecd;
-ULONG flStyle = WS_VISIBLE | HMLS_VSCROLL | HMLS_STATUSNOTIFY | HMLS_BORDER;
+ULONG flStyle = WS_VISIBLE | HMLS_VSCROLL | HMLS_HSCROLL | HMLS_STATUSNOTIFY;// | HMLS_BORDER;
 //HSTCTLDATA hstcd;
 
 ToolbarItemSpec itemSpec;
@@ -700,7 +700,6 @@ UCHAR   ucChar  = CHAR1FROMMP(mp2);
 //char str[100];
 //  printf("HMLEdit:: WM_CHAR\n");
 
-
     ucChar = toupper(ucChar);
     if (fsFlags & KC_KEYUP) return 0L;
     if ((ucChar == 'S')&&(fsFlags&KC_CTRL)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_SHIFT))
@@ -718,7 +717,7 @@ UCHAR   ucChar  = CHAR1FROMMP(mp2);
     if ((ucVkey == VK_F2)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
         WinSendMsg( hwnd, WM_COMMAND, MPFROMSHORT( IDM_RELOAD ), 0 );
 
-    return 0L;
+    return MRFROMLONG( TRUE );
 }
 
 MRESULT mainwmButton2Up( HWND hwnd, MPARAM mp1, MPARAM mp2 )
@@ -1036,11 +1035,11 @@ ULONG   hanType = (ULONG)WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
     WinSendMsg(hwndHMLE,HMLM_IMPORT,0,0);
     WinSendMsg(hwndHMLE,HMLM_SETHANTYPE,MPFROMLONG( hanType ),0L);
 
-    free( buf );
-
     WinPostMsg(hwndStatbar,STATBAR_USERM_SETMODIFIED, MPFROMLONG( TRUE ),0L);
     WinPostMsg(hwndHMLE,HMLM_SETCHANGED, MPFROMLONG( TRUE ),0);
     WinPostMsg(hwndHMLE,HMLM_REFRESH,0,0);
+
+    free( buf );
 
     return 0L;
 }
@@ -1206,12 +1205,12 @@ HWND hwndReplace;
     hwndReplace = WinWindowFromID( hwndDlg, IDHEF_REPLACE );
 
     WinSetWindowText( hwndFind, findStr );
-    WinSendMsg( hwndFind, HEM_SETSEL, MPFROM2SHORT( 0, strlen( findStr )), 0 );
-    WinSendMsg( hwndFind, HEM_REFRESH, 0, 0 );
+//    WinSendMsg( hwndFind, HEM_SETSEL, MPFROM2SHORT( 0, strlen( findStr )), 0 );
+//    WinSendMsg( hwndFind, HEM_REFRESH, 0, 0 );
     WinSetWindowText( hwndReplace, replaceStr );
-    WinSendMsg( hwndReplace, HEM_SETSEL,
-                MPFROM2SHORT( strlen( replaceStr ), strlen( replaceStr )), 0 );
-    WinSendMsg( hwndReplace, HEM_REFRESH, 0, 0 );
+//    WinSendMsg( hwndReplace, HEM_SETSEL,
+//                MPFROM2SHORT( strlen( replaceStr ), strlen( replaceStr )), 0 );
+//    WinSendMsg( hwndReplace, HEM_REFRESH, 0, 0 );
 
     WinSetFocus(HWND_DESKTOP,WinWindowFromID(hwndDlg, DID_OK ));
 

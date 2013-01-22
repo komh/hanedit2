@@ -1,32 +1,33 @@
 #ifndef __HMLEDOC_H__
 #define __HMLEDOC_H__
 
-#define HMLEDOC_MARKING_NONE	0
-#define HMLEDOC_MARKING_BEGIN	1
+#define HMLEDOC_MARKING_NONE    0
+#define HMLEDOC_MARKING_BEGIN   1
 
-#define HMLEDOC_ERROR_NOERROR				0
-#define HMLEDOC_ERROR_NULLINSTANCE			1
-#define HMLEDOC_ERROR_INVALIDARG			2
-#define HMLEDOC_ERROR_INSERTIONTRUNCATED	3
+#define HMLEDOC_ERROR_NOERROR               0
+#define HMLEDOC_ERROR_NULLINSTANCE          1
+#define HMLEDOC_ERROR_INVALIDARG            2
+#define HMLEDOC_ERROR_INSERTIONTRUNCATED    3
 
 typedef struct tagHMLEDoc HMLEDoc;
 struct tagHMLEDoc {
-	HMLELine*	beginLine;
-	HMLELine*	endLine;
-	HMLELine*	curLine;
-	ULONG		curStx;
-	HMLELine*	anchorLine;
-	ULONG		anchorStx;
-	ULONG		markingState;
-	ULONG		editBufSize;
-	USHORT		hchComposing;
-	USHORT		tabsize;
-	UCHAR*		separators;
-	ULONG		changed;
-//	ULONG		readonly;
-//	ULONG		textformat;
-//	ULONG		TGtype;
-	int			errno;
+    HMLELine*   beginLine;
+    HMLELine*   endLine;
+    HMLELine*   curLine;
+    ULONG       curStx;
+    ULONG       savedStx;
+    HMLELine*   anchorLine;
+    ULONG       anchorStx;
+    ULONG       markingState;
+    ULONG       editBufSize;
+    USHORT      hchComposing;
+    USHORT      tabsize;
+    UCHAR*      separators;
+    ULONG       changed;
+//  ULONG       readonly;
+//  ULONG       textformat;
+//  ULONG       TGtype;
+    int         errno;
 };
 
 HMLEDoc* HMLECreateDoc(int cbEditBuf);
@@ -40,6 +41,7 @@ int HMLEDocQuerySize(HMLEDoc* this,HMLEIpt *ipt1,HMLEIpt *ipt2);
 HMLELine* HMLEDocQueryLine(HMLEDoc* this,int ln);
 HMLELine *HMLEDocQueryEndLine(HMLEDoc *this);
 int HMLEDocQueryNumberOfLines(HMLEDoc *this);
+int HMLEDocQueryMaxCols(HMLEDoc *this);
 int HMLEDocPackCurLine(HMLEDoc* this);
 int HMLEDocUnpackCurLine(HMLEDoc* this);
 HMLELine* HMLEDocMoveCurLineTo(HMLEDoc* this,int idx);
@@ -86,8 +88,8 @@ int HMLEDocFormatLine2(HMLEDoc *this,HMLELine *line,char *str,int fixedLen);
 int HMLEDocFindNext(HMLEDoc *this,const char* text,int caseSens);
 */
 int HMLEDocFindString(HMLEDoc *this,const char* findStr,
-						HMLEIpt *beginIpt,HMLEIpt *endIpt,HMLEIpt *foundIpt,
-						int caseSens);
+                        HMLEIpt *beginIpt,HMLEIpt *endIpt,HMLEIpt *foundIpt,
+                        int caseSens);
 
 
 void HMLEDocCheckPacking(HMLEDoc *this);

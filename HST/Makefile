@@ -48,6 +48,5 @@ touch:
 	touch *.c *.h
 
 clean:
-	-$(RM) *.o *.obj *.bak core *~
+	-$(RM) *.o *.obj *.a *.lib *.bak core *~
 
-

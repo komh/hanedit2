@@ -14,6 +14,7 @@ HMLELine* line;
     if (doc == NULL) return NULL;
 
     doc->curStx = 0L;
+    doc->savedStx = 0L;
     doc->anchorLine = NULL;
     doc->anchorStx = 0L;
     doc->markingState = 0L;
@@ -99,7 +100,7 @@ char *pch = NULL;
             this->curLine,this->curStx,pch,this->editBufSize);
         if (ret<0) this->errno = HMLEDOC_ERROR_INSERTIONTRUNCATED;
         HMLEDocMoveCurLineNext(this);
-        this->curStx=0;
+        this->savedStx = this->curStx=0;
         ln++;
         pch = HMLETextThunkNextLine(textThunk);
         }
@@ -122,6 +123,7 @@ char *pch = NULL;
             this->curStx-=ret;      // truncated
             this->errno = HMLEDOC_ERROR_INSERTIONTRUNCATED;
             }
+        this->savedStx = this->curStx;
         }
 
     if (this->errno!=0) return -1;
@@ -305,6 +307,33 @@ HMLELine *line;
     return n;
 }
 
+int HMLEDocQueryMaxCols( HMLEDoc *this )
+{
+    int n = 0;
+    char *str;
+    HMLELine *line;
+
+    if( this == NULL ) return -1;
+    if( this->beginLine == NULL ) return -1;
+
+    str = malloc( this->editBufSize );
+    if( str == NULL ) return -1;
+
+    line = this->beginLine;
+    while( line != NULL )
+    {
+        HMLEDocFormatLine( this, line, str);
+        if( n <  strlen( line->str ))
+            n = strlen( line->str );
+
+        line = line->nextLine;
+    }
+
+    free( str );
+
+    return n;
+}
+
 int HMLEDocPackCurLine(HMLEDoc* this)
 {
     if (this==NULL) return -1;
@@ -345,13 +374,15 @@ HMLELine* line;
 
 int HMLEDocMoveCurLineNext(HMLEDoc *this)
 {
-int oldCol,stx;
+int oldCol, oldSavedStx, stx;
 
     if (this==NULL) return 0;
 
     if (this->curLine->nextLine==NULL) return 0;
 
-    oldCol = HMLEDocStx2Col(this,this->curLine,this->curStx);
+//    oldCol = HMLEDocStx2Col(this,this->curLine,this->curStx);
+    oldCol = HMLEDocStx2Col( this, this->curLine, this->savedStx);
+    oldSavedStx = this->savedStx;
 
     HMLEDocPackCurLine(this);
     this->curLine = this->curLine->nextLine;
@@ -360,18 +391,23 @@ int oldCol,stx;
     stx = HMLEDocCol2Stx(this,this->curLine,oldCol);
     HMLEDocMoveCurStxTo(this,stx);
 
+    if( oldSavedStx > this->curStx )
+        this->savedStx = oldSavedStx;
+
     return 1;
 }
 
 int HMLEDocMoveCurLinePrev(HMLEDoc *this)
 {
-int oldCol,stx;
+int oldCol, oldSavedStx, stx;
 
     if (this==NULL) return 0;
 
     if (this->curLine->prevLine==NULL) return 0;
 
-    oldCol = HMLEDocStx2Col(this,this->curLine,this->curStx);
+//    oldCol = HMLEDocStx2Col(this,this->curLine,this->curStx);
+    oldCol = HMLEDocStx2Col( this, this->curLine, this->savedStx );
+    oldSavedStx = this->savedStx;
 
     HMLEDocPackCurLine(this);
     this->curLine = this->curLine->prevLine;
@@ -379,6 +415,10 @@ int oldCol,stx;
 
     stx = HMLEDocCol2Stx(this,this->curLine,oldCol);
     HMLEDocMoveCurStxTo(this,stx);
+
+    if( oldSavedStx > this->curStx )
+        this->savedStx = oldSavedStx;
+
     return -1;
 }
 
@@ -413,7 +453,7 @@ int tmpStx = stx;
     if (tmpStx > len) tmpStx = len;
 
     hch_alignStx(HMLELineQueryStr(this->curLine,0),&tmpStx);
-    if (tmpStx>=0) this->curStx = tmpStx;
+    if (tmpStx>=0) this->savedStx = this->curStx = tmpStx;
 
     return 0;
 }
@@ -427,22 +467,22 @@ int HMLEDocMoveCurStx(HMLEDoc *this,int step)
         {
         step++;
         if (this->curStx > 0)
-            this->curStx --;
+            this->savedStx = -- this->curStx;
         else if (this->curLine != this->beginLine)
             {
             HMLEDocMoveCurLinePrev(this);
-            this->curStx = HMLELineQueryLen(this->curLine);
+            this->savedStx = this->curStx = HMLELineQueryLen(this->curLine);
             } else step = 0;
         }
     while (step>0)
         {
         step--;
         if (this->curStx < HMLELineQueryLen(this->curLine))
-            this->curStx ++;
+            this->savedStx = ++ this->curStx;
         else if (this->curLine->nextLine != NULL)
             {
             HMLEDocMoveCurLineNext(this);
-            this->curStx = 0;
+            this->savedStx = this->curStx = 0;
             } else step = 0;
         }
 
@@ -461,10 +501,10 @@ int tempStx;
         tempStx = this->curStx;
         if (hch_decStx(HMLELineQueryStr(this->curLine,0),&tempStx))
             {
-            this->curStx = tempStx;
+            this->savedStx = this->curStx = tempStx;
             } else {
             if (HMLEDocMoveCurLinePrev(this))
-                this->curStx = HMLELineQueryLen(this->curLine);
+                this->savedStx = this->curStx = HMLELineQueryLen(this->curLine);
             }
         }
     return this->curStx;
@@ -483,10 +523,10 @@ int tempStx;
         tempStx = this->curStx;
         if (hch_incStx(HMLELineQueryStr(this->curLine,0),&tempStx))
             {
-            this->curStx = tempStx;
+            this->savedStx = this->curStx = tempStx;
             } else {
             if (HMLEDocMoveCurLineNext(this))
-                this->curStx = 0;
+                this->savedStx = this->curStx = 0;
             }
         }
     return this->curStx;
@@ -565,7 +605,7 @@ int ln;
 int ofs=0;
 
     if (this==NULL) return -1;
-    if (this==NULL) return -1;
+    if (ipt==NULL) return -1;
 
     for (ln=0,line=this->beginLine;(ln<=ipt->ln)&&(line!=NULL);ln++,line=line->nextLine)
         {

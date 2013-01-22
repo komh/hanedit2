@@ -4,7 +4,9 @@ CFLAGS = -Wall -Wno-format -Wno-parentheses -O -DDEBUG -g
 CFLAGS2 = -Zomf -Zsys -Wall -Wno-format -Wno-parentheses -O3 -s
 
 CP = cp
+CP2 = copy
 RM = rm
+RC = rc
 
 .c.o:
 	$(CC) $*.c $(CFLAGS) -c -o $@
@@ -36,6 +38,10 @@ HCT_H = \
 	$(HCT_DIR)/ktype.h
 HCT_O = $(HCT_DIR)/hct.o
 HCT_OBJ = $(HCT_DIR)/hct.obj
+
+HCHLB_DIR = ..\hchlb
+HCHLB_H = $(HCHLB_DIR)\hchlbdlg.h
+HCHLBDLG_RES = $(HCHLB_DIR)\hchlbdlg.res
 
 HMLE_DIR = ../HMLE
 HMLE_LIB = ../HMLE/HMLE.lib
@@ -69,7 +75,12 @@ statbar.o:	statbar.h $(LIBS_H)
 toolbar.o:	toolbar.h $(LIBS_H)
 dlg.o:		dlg.h $(LIBS_H)
 
-HMLEdit.res:	HMLEdit.rc res.h dlg.dlg $(HMLE_H) $(HST_H) $(HEF_H)
+$(HCHLBDLG_RES) :
+	$(MAKE) -C $(HCHLB_DIR) hchlbdlg.res
+
+HMLEdit.res:	HMLEdit.rc res.h dlg.dlg $(HCHLBDLG_RES) $(HMLE_H) $(HST_H) $(HEF_H)
+	$(RC) -r hmledit.rc
+	$(CP2) /b hmledit.res+$(HCHLBDLG_RES) hmledit.res
 
 #hanedit Release version
 HMLEDIT_OBJ = $(HMLEDIT_O:.o=.obj)
@@ -85,4 +96,4 @@ touch:
 	touch *.c *.h *.rc
 
 clean:
-	-$(RM) *.o *.obj *.bak core *~
+	-$(RM) *.o *.obj *.a *.lib *.res *.exe *.bak *.rwp core *~*

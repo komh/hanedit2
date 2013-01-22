@@ -204,48 +204,80 @@ POINTL p;
     assert(hps!=NULLHANDLE);
 #endif
 
+//    WinFillRect(hps,&rectlUpdate,SYSCLR_DIALOGBACKGROUND);
+
     WinQueryWindowRect(hwnd,&rectlEntire);
 
-    WinFillRect(hps,&rectlEntire,SYSCLR_DIALOGBACKGROUND);
+    GpiSetColor(hps,SYSCLR_BUTTONDARK);
+    p.x = rectlEntire.xRight - 1;
+    p.y = rectlEntire.yTop-1;
+    GpiMove(hps,&p);
+    p.x = rectlEntire.xLeft;
+    GpiLine(hps,&p);
+    p.y --;
+    GpiLine(hps, &p);
+
+    GpiSetColor(hps,SYSCLR_BUTTONLIGHT);
+    p.x ++;
+    GpiMove(hps,&p);
+    p.x = rectlEntire.xRight - 1;
+    GpiLine(hps,&p);
+    p.y ++;
+    GpiLine( hps, &p );
+
+    GpiSetBackMix( hps, BM_OVERPAINT );
+
+    GpiSetColor(hps,CLR_BLACK);
+    GpiSetBackColor( hps, SYSCLR_DIALOGBACKGROUND );
 
     if (pInstance->inputmode == HCH_ENG)
         {
-        sprintf(str,"영문");
+        sprintf(str,"영문   ");
         } else {
         switch (pInstance->kbdmode) {
         case HAN_KBD_2:
-            sprintf(str,"한글2");
+            sprintf(str,"한글2  ");
             break;
         case HAN_KBD_390:
             sprintf(str,"한글390");
             break;
         case HAN_KBD_3FINAL:
-            sprintf(str,"한글3F");
+            sprintf(str,"한글3F ");
             break;
         } // switch
         }
-    GpiSetColor(hps,SYSCLR_BUTTONLIGHT);
-    p.x = rectlEntire.xLeft;
-    p.y = rectlEntire.yTop-1;
-    GpiMove(hps,&p);
-    p.x = rectlEntire.xRight;
-    GpiLine(hps,&p);
-    GpiSetColor(hps,CLR_BLACK);
 
     hch_ks2systr(str);
     HanOut(hps,0,0,str);
+
+    rectlUpdate.yTop -= 2;
+    rectlUpdate.xLeft = 8 * 7;
+    rectlUpdate.xRight = 60;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
 
     if (pInstance->modified)
         HanOut(hps,60,0,"*");
         else
         HanOut(hps,60,0," ");
 
+    rectlUpdate.xLeft = 60 + 8 * 1;
+    rectlUpdate.xRight = 120;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
+
     sprintf(str,"L %-5d  C %-3d    ",pInstance->ln,pInstance->col);
     HanOut(hps,120,0,str);
+
+    rectlUpdate.xLeft = 120 + 18 * 8;
+    rectlUpdate.xRight = rectlEntire.xRight - 136;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
 
     sprintf( str, ( pInstance->insertmode == HAN_INSERT ) ? "끼움" : "겹침" );
     hch_ks2systr( str );
     HanOut( hps, rectlEntire.xRight - 136, 0, str );
+
+    rectlUpdate.xLeft = rectlUpdate.xRight + 8 * 4;
+    rectlUpdate.xRight = rectlEntire.xRight - 96;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
 
     if (pInstance->han_type == HMLE_HAN_KS)
         sprintf(str,"완성");
@@ -254,10 +286,18 @@ POINTL p;
     hch_ks2systr(str);
     HanOut(hps,rectlEntire.xRight-96,0,str);
 
+    rectlUpdate.xLeft = rectlUpdate.xRight + 8 * 4;
+    rectlUpdate.xRight = rectlEntire.xRight - 56;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
+
     if (pInstance->eol_type == HMLE_EOL_CRLF)
         HanOut(hps,rectlEntire.xRight-56,0,"CR/LF");
         else
-        HanOut(hps,rectlEntire.xRight-56,0,"LF");
+        HanOut(hps,rectlEntire.xRight-56,0,"LF   ");
+
+    rectlUpdate.xLeft = rectlUpdate.xRight + 8 * 5;
+    rectlUpdate.xRight = rectlEntire.xRight;
+    WinFillRect( hps, &rectlUpdate, SYSCLR_DIALOGBACKGROUND );
 
     WinEndPaint( hps );
 

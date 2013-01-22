@@ -1,10 +1,9 @@
-#include <os2.h>
 #include "res.h"
 #include "..\hmle\hmle.h"
 #include "..\hef\hef.h"
 
-ICON ID_APP	pen.ico
-MENU ID_APP 
+ICON ID_APP pen.ico
+MENU ID_APP
 BEGIN
 	SUBMENU "~File", IDM_FILE
 	BEGIN
@@ -41,7 +40,7 @@ END
 
 rcinclude dlg.dlg
 
-MENU ID_POPUP 
+MENU ID_POPUP
 BEGIN
 	MENUITEM "~Copy", IDM_COPY
 	MENUITEM "Cu~t", IDM_CUT
@@ -49,4 +48,3 @@ BEGIN
 	MENUITEM SEPARATOR
 	MENUITEM "~Delete", IDM_CLEAR
 END
-
