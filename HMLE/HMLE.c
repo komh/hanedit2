@@ -636,6 +636,7 @@ int beginOfs;
     if (hmle->han_type == HMLE_HAN_KS)
         {
         char *str = HMLETextThunkQueryStr(textThunk);
+
         hch_sy2ksstr(str);
         }
     if (hmle->eol_type == HMLE_EOL_CRLF)

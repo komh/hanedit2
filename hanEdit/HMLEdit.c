@@ -1,5 +1,5 @@
 #define APPNAME     "HanEdit/2"
-#define VERSION     "0.048"
+#define VERSION     "0.048a"
 #define AUTHOR      "Moon,Yousung / kwisatz@mail.hitel.net"
 #define EXTENDER    "KO Myung-Hun / komh@chollian.net"
 
@@ -694,7 +694,7 @@ MRESULT mainwmSize( HWND hwnd, MPARAM mp1, MPARAM mp2 )
 MRESULT mainwmChar(HWND hwnd, MPARAM mp1, MPARAM mp2)
 {
 USHORT  fsFlags = SHORT1FROMMP(mp1);
-//UCHAR ucVkey  = CHAR3FROMMP(mp2);
+UCHAR   ucVkey  = CHAR3FROMMP(mp2);
 UCHAR   ucChar  = CHAR1FROMMP(mp2);
 //UCHAR ucScancode = CHAR4FROMMP(mp1);
 //char str[100];
@@ -715,6 +715,9 @@ UCHAR   ucChar  = CHAR1FROMMP(mp2);
         HESelectAll(hwnd);
     if ((ucChar == 'X')&&(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
         HEExit(hwnd);
+    if ((ucVkey == VK_F2)&&!(fsFlags&KC_ALT)&&!(fsFlags&KC_CTRL)&&!(fsFlags&KC_SHIFT))
+        WinSendMsg( hwnd, WM_COMMAND, MPFROMSHORT( IDM_RELOAD ), 0 );
+
     return 0L;
 }
 
@@ -1269,7 +1272,10 @@ char str[CCHMAXPATH];
 int HEFileOpenWithAutoHanCode(HWND hwnd,char *filename,int enableReload)
 {
     ULONG HanType   = (ULONG)  WinSendMsg(hwndHMLE,HMLM_QUERYHANTYPE,0L,0L);
-    int ret = HEFileOpen( hwnd, filename, enableReload );
+    int ret;
+
+    _fullpath( szFullPath, filename, sizeof( szFullPath ));
+    ret = HEFileOpen( hwnd, szFullPath, enableReload );
 
     if( ret != ( int )HanType )
     {
@@ -1282,7 +1288,7 @@ int HEFileOpenWithAutoHanCode(HWND hwnd,char *filename,int enableReload)
             WinPostMsg(hwndStatbar,STATBAR_USERM_SETHANTYPE,MPFROMLONG(HMLE_HAN_KS),0L);
         }
 
-        ret = HEFileOpen( hwnd, filename, enableReload );
+        ret = HEFileOpen( hwnd, szFullPath, enableReload );
     }
 
     return ret;
@@ -1304,7 +1310,7 @@ int ret = 0;
         WinSendMsg(hwndHMLE,HMLM_IMPORT,0,0);
         WinSendMsg(hwndHMLE,HMLM_SETFIRSTCHAR,MPFROMLONG(0),0);
 
-        strcpy(szFullPath,filename);
+        _fullpath( szFullPath,filename, sizeof( szFullPath ));
         extractDirname();
         _chdir2(szDir);
         if (enableReload) EnableReloadButton(hwnd);

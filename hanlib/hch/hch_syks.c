@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "hch.h"
 
-#define SINGLENUM	51
+#define SINGLENUM   51
 
 unsigned short KStbl[2350] = {
    0x8861,0x8862,0x8865,0x8868,0x8869,0x886a,0x886b,0x8871,
@@ -342,7 +342,7 @@ unsigned short Single[SINGLENUM] = {
 
 int hch_compare_code(unsigned short *p1,unsigned short *p2)
 {
-	return (*p1 - *p2);
+    return (*p1 - *p2);
 }
 
 HANCHAR hch_ks2sy(HANCHAR hch)
@@ -350,35 +350,35 @@ HANCHAR hch_ks2sy(HANCHAR hch)
 HANCHAR ch = hch>>8;
 HANCHAR cl = hch&0x00FF;
 
-	if (!ISHCH(hch)) return hch;
+    if (!ISHCH(hch)) return hch;
 
-	if ((ch<HCH_WKS_HBEGIN) ||
-		(cl<HCH_WKS_LBEGIN)) return HCH_DOUBLE_SPACE;
+    if ((ch<HCH_WKS_HBEGIN) ||
+        (cl<HCH_WKS_LBEGIN)) return HCH_DOUBLE_SPACE;
 
-	if (ch <= HCH_WKS_SPECIAL_END) // special
-		if (ch==HCH_WKS_SINGLE) // single jaso
-		{
+    if (ch <= HCH_WKS_SPECIAL_END) // special
+        if (ch==HCH_WKS_SINGLE) // single jaso
+        {
 
-		return (cl>=HCH_WKS_SINGLE_LBEGIN && cl<=HCH_WKS_SINGLE_LEND) ?
-			Single[cl-HCH_WKS_SINGLE_LBEGIN] : HCH_SINGLE_SPACE;
+        return (cl>=HCH_WKS_SINGLE_LBEGIN && cl<=HCH_WKS_SINGLE_LEND) ?
+            Single[cl-HCH_WKS_SINGLE_LBEGIN] : HCH_SINGLE_SPACE;
 
-		} else {
-		HANCHAR tgch,tgcl;
-		
-		tgch = ((ch-HCH_WKS_SPECIAL_BEGIN)/2 + 0xd9);
-		if (ch & 0x0001)
-			tgcl=(cl<0xef)?(cl-0x70):(cl-0x5e);
-			else
-			tgcl=cl;
-		return ((tgch << 8)|tgcl);
-		}
-	if ((ch >= HCH_WKS_HAN_BEGIN) && (ch <= HCH_WKS_HAN_END)) // KS han
-		return KStbl[(unsigned long)((ch-HCH_WKS_HAN_BEGIN)*94+(cl-HCH_WKS_LBEGIN))];
-	if ((ch >= HCH_WKS_HANJA_BEGIN) && (ch <= HCH_WKS_HANJA_END)) // KS hanja
-		return hch_ks2sy_hanja(hch);
-//		return HCH_DOUBLE_SPACE;	// not implemented
+        } else {
+        HANCHAR tgch,tgcl;
 
-	return hch;		  // etc
+        tgch = ((ch-HCH_WKS_SPECIAL_BEGIN)/2 + 0xd9);
+        if (ch & 0x0001)
+            tgcl=(cl<0xef)?(cl-0x70):(cl-0x5e);
+            else
+            tgcl=cl;
+        return ((tgch << 8)|tgcl);
+        }
+    if ((ch >= HCH_WKS_HAN_BEGIN) && (ch <= HCH_WKS_HAN_END)) // KS han
+        return KStbl[(unsigned long)((ch-HCH_WKS_HAN_BEGIN)*94+(cl-HCH_WKS_LBEGIN))];
+    if ((ch >= HCH_WKS_HANJA_BEGIN) && (ch <= HCH_WKS_HANJA_END)) // KS hanja
+        return hch_ks2sy_hanja(hch);
+//      return HCH_DOUBLE_SPACE;    // not implemented
+
+    return hch;       // etc
 }
 
 unsigned char *hch_ks2systr(unsigned char *s)
@@ -387,19 +387,19 @@ unsigned char *pch,*pch2;
 HANCHAR hch;
 
 
-	pch = s;
-	pch2 = s;	
-	while (hch = hch_getNextHch(&pch))
-		{
-		hch = hch_ks2sy(hch);
-		if (hch==HCH_DOUBLE_SPACE)
-			{
-			pch2=hch_setHchToPch(0x20,pch2);
-			pch2=hch_setHchToPch(0x20,pch2);
-			}
-		else pch2=hch_setHchToPch(hch,pch2);
-		}
-	return s;
+    pch = s;
+    pch2 = s;
+    while (hch = hch_getNextHch(&pch))
+        {
+        hch = hch_ks2sy(hch);
+        if (hch==HCH_DOUBLE_SPACE)
+            {
+            pch2=hch_setHchToPch(0x20,pch2);
+            pch2=hch_setHchToPch(0x20,pch2);
+            }
+        else pch2=hch_setHchToPch(hch,pch2);
+        }
+    return s;
 }
 
 HANCHAR hch_sy2ks(HANCHAR code)
@@ -409,75 +409,77 @@ unsigned char c1,c2;
 unsigned short *p;
 unsigned long idx;
 
-	if (!ISHCH(code)) return code;
+    if (!ISHCH(code)) return code;
 
-	if (((code&HCH_FST_MASK)!=HCH_FST_FILL_SHIFTED) &&
-		((code&HCH_MID_MASK)==HCH_MID_FILL_SHIFTED))
-		if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
-			{
-			for (idx=0;idx<SINGLENUM;idx++)
-				if (Single[idx]==code) return (0xA400 | (idx+0xA1));
-			return 0x2020;
-			} else {
-			code = (code & HCH_MID_MASK) | (0x0003 << 5); // insert 'ah'
-			}
-	if (((code&HCH_FST_MASK)==HCH_FST_FILL_SHIFTED) &&
-		((code&HCH_MID_MASK)!=HCH_MID_FILL_SHIFTED))
-		if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
-			{
-			for (idx=0;idx<SINGLENUM;idx++)
-				if (Single[idx]==code) return (0xA400 | (idx+0xA1));
-			return 0x2020;
-			} else {
-			code = (code & HCH_FST_MASK) | (0x000D << 10); // insert 'o' (not oh)
-			}
-	if (((code&HCH_FST_MASK)==HCH_FST_FILL_SHIFTED) &&
-		((code&HCH_MID_MASK)==HCH_MID_FILL_SHIFTED))
-		if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
+    c1=(code>>8);
+    c2=(code & 0x00ff);
 
-			{
-			return 0x2020;
-			} else {
-			for (idx=0;idx<SINGLENUM;idx++)
-				if (Single[idx]==code) return (0xA400 | (idx+0xA1));
-			return 0x2020;
-			}
+    if (((c1>=0xe0) && (c1<=0xf9)) &&
+        (((c2>=0x31) && (c2<=0x7e)) || ((c2>=0x91) && (c2<=0xfe))))
+        return hch_sy2ks_hanja(code);
 
-	c1=(code>>8);
-	c2=(code & 0x00ff);
+    if (((code&HCH_FST_MASK)!=HCH_FST_FILL_SHIFTED) &&
+        ((code&HCH_MID_MASK)==HCH_MID_FILL_SHIFTED))
+        if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
+            {
+            for (idx=0;idx<SINGLENUM;idx++)
+                if (Single[idx]==code) return (0xA400 | (idx+0xA1));
+            return 0x2020;
+            } else {
+            code = (code & HCH_MID_MASK) | (0x0003 << 5); // insert 'ah'
+            }
+    if (((code&HCH_FST_MASK)==HCH_FST_FILL_SHIFTED) &&
+        ((code&HCH_MID_MASK)!=HCH_MID_FILL_SHIFTED))
+        if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
+            {
+            for (idx=0;idx<SINGLENUM;idx++)
+                if (Single[idx]==code) return (0xA400 | (idx+0xA1));
+            return 0x2020;
+            } else {
+            code = (code & HCH_FST_MASK) | (0x000D << 10); // insert 'o' (not oh)
+            }
+    if (((code&HCH_FST_MASK)==HCH_FST_FILL_SHIFTED) &&
+        ((code&HCH_MID_MASK)==HCH_MID_FILL_SHIFTED))
+        if ((code&HCH_LST_MASK)==HCH_LST_FILL_SHIFTED)
 
-	if (((c1>=0xd9) && (c1<=0xde)) &&
-		((c2>=0x31) && (c2<=0xfe)) &&
-		(!((c2>0x7e) && (c2<0x91))))  // special
-		{
-		if (c2<0xa1)
-			{
-			KScode = ((c1-0xd9)*2+0xa1) << 8;
-			if (c2<=0x7e)
-				KScode |= (c2+0x70);
-				else
-				KScode |= (c2+0x5e);
-			} else {
-			KScode = ((c1-0xd9)*2+0xa2) << 8;
-			KScode |= c2;
-			}
-		return KScode;
-		}
+            {
+            return 0x2020;
+            } else {
+            for (idx=0;idx<SINGLENUM;idx++)
+                if (Single[idx]==code) return (0xA400 | (idx+0xA1));
+            return 0x2020;
+            }
 
-	p = (unsigned short *)bsearch(&code,KStbl,2350,sizeof(unsigned short),
-			(int(*)(const void*,const void*)) hch_compare_code);
+    c1=(code>>8);
+    c2=(code & 0x00ff);
 
-	if (p)	{
-		idx = p - KStbl;
-		KScode = ((idx/94+0xb0) << 8) | (idx%94+0xa1);
-		} else {
-		if (((c1>=0xe0) && (c1<=0xf9)) &&
-			(((c2>=0x31) && (c2<=0x7e)) || ((c2>=0x91) && (c2<=0xfe))))
-			KScode = hch_sy2ks_hanja(code);
-			else KScode = 0x2020; // space
-		}
+    if (((c1>=0xd9) && (c1<=0xde)) &&
+        ((c2>=0x31) && (c2<=0xfe)) &&
+        (!((c2>0x7e) && (c2<0x91))))  // special
+        {
+        if (c2<0xa1)
+            {
+            KScode = ((c1-0xd9)*2+0xa1) << 8;
+            if (c2<=0x7e)
+                KScode |= (c2+0x70);
+                else
+                KScode |= (c2+0x5e);
+            } else {
+            KScode = ((c1-0xd9)*2+0xa2) << 8;
+            KScode |= c2;
+            }
+        return KScode;
+        }
 
-	return KScode;
+    p = (unsigned short *)bsearch(&code,KStbl,2350,sizeof(unsigned short),
+            (int(*)(const void*,const void*)) hch_compare_code);
+
+    if (p)  {
+        idx = p - KStbl;
+        KScode = ((idx/94+0xb0) << 8) | (idx%94+0xa1);
+        } else KScode = 0x2020; // space
+
+    return KScode;
 
 }
 
@@ -486,18 +488,18 @@ unsigned char *hch_sy2ksstr(unsigned char *s)
 unsigned char *pch,*pch2;
 HANCHAR hch;
 
-	pch = s;
-	pch2 = s;
-	while (hch = hch_getNextHch(&pch))
-		{
-		hch = hch_sy2ks(hch);
-		if (hch==HCH_DOUBLE_SPACE)
-			{
-			pch2=hch_setHchToPch(0x20,pch2);
-			pch2=hch_setHchToPch(0x20,pch2);
-			}
-		else pch2 = hch_setHchToPch(hch,pch2);
-		}
-	return s;
+    pch = s;
+    pch2 = s;
+    while (hch = hch_getNextHch(&pch))
+        {
+        hch = hch_sy2ks(hch);
+        if (hch==HCH_DOUBLE_SPACE)
+            {
+            pch2=hch_setHchToPch(0x20,pch2);
+            pch2=hch_setHchToPch(0x20,pch2);
+            }
+        else pch2 = hch_setHchToPch(hch,pch2);
+        }
+    return s;
 }
 

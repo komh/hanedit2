@@ -8,7 +8,7 @@ BEGIN
 	DIALOG "About", IDD_ABOUT, 0, 0, 137, 160, NOT FS_DLGBORDER |
 FS_BORDER | WS_VISIBLE, FCF_TITLEBAR
 	BEGIN
-		CTEXT "HanEdit/2 Ver 0.048", -1, 14, 136, 109, 13, DT_VCENTER
+        CTEXT "HanEdit/2 Ver 0.048a", -1, 14, 136, 109, 13, DT_VCENTER
 		PRESPARAMS PP_FONTNAMESIZE , "14.Times New Roman"
 		CTEXT "by Moon,Yousung", -1, 32, 120, 72, 8, DT_VCENTER
 		CTEXT "(kwisatz@mail.hitel.net)", -1, 17, 112, 102, 8, DT_VCENTER
