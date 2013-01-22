@@ -36,6 +36,7 @@ MRESULT EXPENTRY HCHLBClientWndProc( HWND hwnd, ULONG msg, MPARAM mp1, MPARAM mp
         case WM_BUTTON1CLICK  : return hchlbc_wmButton1Click( hwnd, mp1, mp2 );
         case WM_BUTTON1DBLCLK : return hchlbc_wmButton1DblClk( hwnd, mp1, mp2 );
         case WM_PAINT         : return hchlbc_wmPaint( hwnd, mp1, mp2 );
+        case WM_VSCROLL       : WinPostMsg( WinQueryWindow( hwnd, QW_PARENT ), msg, mp1, mp2 ); return 0L;
 
         case HCHLMC_REFRESH  : return hchlbc_umRefresh( hwnd, mp1, mp2 );
         case HCHLMC_SETFOCUS : return hchlbc_umSetFocus( hwnd, mp1, mp2 );
