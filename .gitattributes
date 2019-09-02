@@ -1,0 +1,6 @@
+# auto detect 'text' mode and use global setting of 'eol'
+* text=auto !eol
+
+/e.fnt      binary
+/h.fnt      binary
+/HANJA.FNT  binary
